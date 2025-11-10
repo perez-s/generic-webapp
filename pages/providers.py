@@ -93,7 +93,7 @@ def get_enum_values(enum_name: str):
     except Exception as e:
         print(f"Error fetching enum values: {e}")
 
-@st.dialog("Crear proveedor")
+@st.dialog("Crear proveedor", width="large")
 def create_provider_dialog():
     providers_form = st.form("providers_form")
     with providers_form:
@@ -105,23 +105,31 @@ def create_provider_dialog():
                 - Presiona el botón para crear el proveedor.
                 """
             )
-        provider_name = st.text_input("Nombre del proveedor")
-        provider_nit = st.number_input("NIT del proveedor", step=1, format="%d")
-        provider_email = st.text_input("Correo electrónico del proveedor")
-        provider_contact = st.text_input("Contacto")
-        provider_contact_phone = st.text_input("Teléfono")
-        provider_category = st.multiselect(
-            "Tipos de residuos",
-            options=get_enum_values("residue_type")
-        )
-        provider_auth_activities = st.multiselect(
-            "Actividades autorizadas",
-            options=get_enum_values("activities_performed")
-        )
-        lic_amb_file = st.file_uploader("Licencia ambiental", type=["pdf", "jpg", "png"])
-        rut_file = st.file_uploader("RUT", type=["pdf", "jpg", "png"])
-        ccio_file = st.file_uploader("Cámara de comercio", type=["pdf", "jpg", "png"])
-        other_docs_file = st.file_uploader("Otros documentos", type=["pdf", "jpg", "png"])    
+        col1, col2 = st.columns(2)
+        with col1:
+            provider_name = st.text_input("Nombre del proveedor")
+            provider_nit = st.number_input("NIT del proveedor", step=1, format="%d")
+            provider_email = st.text_input("Correo electrónico del proveedor")
+            provider_contact = st.text_input("Contacto")
+
+        with col2:
+            provider_contact_phone = st.text_input("Teléfono")
+            provider_category = st.multiselect(
+                "Tipos de residuos",
+                options=get_enum_values("residue_type")
+            )
+            provider_auth_activities = st.multiselect(
+                "Actividades autorizadas",
+                options=get_enum_values("activities_performed")
+            )
+        st.divider()
+        col1, col2 = st.columns(2)
+        with col1:
+            lic_amb_file = st.file_uploader("Licencia ambiental", type=["pdf", "jpg", "png"])
+            rut_file = st.file_uploader("RUT", type=["pdf", "jpg", "png"])
+        with col2:
+            ccio_file = st.file_uploader("Cámara de comercio", type=["pdf", "jpg", "png"])
+            other_docs_file = st.file_uploader("Otros documentos", type=["pdf", "jpg", "png"])    
         submitted = st.form_submit_button("Enviar solicitud")
         if submitted:
             username = "user1"
