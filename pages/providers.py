@@ -110,7 +110,7 @@ def create_provider_dialog():
             provider_name = st.text_input("Nombre del proveedor")
             provider_nit = st.number_input("NIT del proveedor", step=1, format="%d")
             provider_email = st.text_input("Correo electrónico del proveedor")
-            provider_contact = st.text_input("Contacto")
+            provider_contact = st.number_input("Contacto", step=1, format="%d")
 
         with col2:
             provider_contact_phone = st.text_input("Teléfono")
