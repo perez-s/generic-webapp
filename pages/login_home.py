@@ -141,16 +141,10 @@ if ss["authentication_status"]:
             width="200px",
             key="demo_tile3"
         )
-    # if agua:
-    #     st.info("💧 Agua clicked!")
-    # if energia:
-    #     st.info("⚡ Energía clicked!")
     if residuos:
         st.info("🗑️ Residuos clicked!")
         st.switch_page('pages/nav3.py')
     st.space("large")
-    with col2:
-        authenticator.logout(button_name='Cerrar sesión', location='main', use_container_width=True, key='logouthome')
 if ss["authentication_status"] is False:
     st.toast('Usuario/contraseña incorrecta', icon="🚫")
     set_bg_hack('./resources/homepage1.jpg')
