@@ -23,14 +23,32 @@ supabase_key = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(supabase_url, supabase_key)
 
 ### Functions for the page ###
-def create_provider(username: str, provider_name: str, provider_category: list, lic_amb_path: str, rut_path: str, ccio_path: str, other_docs_path: str):
+def create_provider(
+        username: str,
+        provider_name: str, 
+        provider_nit: int, 
+        provider_email: str, 
+        provider_contact: str, 
+        provider_contact_phone: int, 
+        provider_category: list,
+        provider_activity: list, 
+        lic_amb_path: str, 
+        rut_path: str, 
+        ccio_path: str, 
+        other_docs_path: str
+    ):
     now = datetime.now(timezone(timedelta(hours=5))).isoformat()
     print(now)
     try:
         request = supabase.table("providers").insert({
             "username": username,
             "provider_name": provider_name,
+            "provider_nit": provider_nit,
+            "provider_email": provider_email,
+            "provider_contact": provider_contact,
+            "provider_contact_phone": provider_contact_phone,
             "provider_category": provider_category,
+            "provider_activity": provider_activity,
             "lic_amb_path": lic_amb_path,
             "rut_path": rut_path,
             "ccio_path": ccio_path,
@@ -60,13 +78,20 @@ def format_date(date_str: str) -> str:
     # Format as desired
     return date_obj.strftime("%Y %B  %d %H:%M %Z")
 
-def path_file(provider_name, file_name, upload_file) -> str:
-    return f"uploads/{provider_name}_{file_name}.{upload_file.type.split('/')[-1]}"
+def path_file(provider_nit, provider_name, file_name, upload_file) -> str:
+    return f"uploads/{provider_nit}_{provider_name}_{file_name}.{upload_file.type.split('/')[-1]}"
 
 def save_file(file_uploader, file_path) -> str:
     with open(file_path, mode='wb') as w:
         w.write(file_uploader.getvalue())
     return file_path
+
+def get_enum_values(enum_name: str):
+    try:
+        result = supabase.rpc('get_types', {'enum_type': f'{enum_name}'}).execute()
+        return result.data
+    except Exception as e:
+        print(f"Error fetching enum values: {e}")
 
 @st.dialog("Crear proveedor")
 def create_provider_dialog():
@@ -81,30 +106,17 @@ def create_provider_dialog():
                 """
             )
         provider_name = st.text_input("Nombre del proveedor")
-        provider_nit = st.number_input("NIT del proveedor")
+        provider_nit = st.number_input("NIT del proveedor", step=1, format="%d")
         provider_email = st.text_input("Correo electrónico del proveedor")
         provider_contact = st.text_input("Contacto")
         provider_contact_phone = st.text_input("Teléfono")
         provider_category = st.multiselect(
             "Tipos de residuos",
-            options=[
-                "Aceites usados",
-                "Pilas y baterias",
-                "Luminarias",
-                "Biosanitarios",
-                "RAEE",
-                "Pinturas",
-                "Otros peligrosos"
-            ]
+            options=get_enum_values("residue_type")
         )
         provider_auth_activities = st.multiselect(
             "Actividades autorizadas",
-            options=[
-                "Recolección y transporte",
-                "Tratamiento",
-                "Disposición final",
-                "Aprovechamiento"
-            ]
+            options=get_enum_values("activities_performed")
         )
         lic_amb_file = st.file_uploader("Licencia ambiental", type=["pdf", "jpg", "png"])
         rut_file = st.file_uploader("RUT", type=["pdf", "jpg", "png"])
@@ -113,11 +125,11 @@ def create_provider_dialog():
         submitted = st.form_submit_button("Enviar solicitud")
         if submitted:
             username = "user1"
-            lic_amb_path = path_file(provider_name, "lic_amb", lic_amb_file)
-            rut_path = path_file(provider_name, "rut", rut_file)
-            ccio_path = path_file(provider_name, "ccio", ccio_file)
-            other_docs_path = path_file(provider_name, "other_docs", other_docs_file)
-            create_provider(username, provider_name, provider_category, lic_amb_path, rut_path, ccio_path, other_docs_path)
+            lic_amb_path = path_file(provider_nit, provider_name, "lic_amb", lic_amb_file)
+            rut_path = path_file(provider_nit, provider_name, "rut", rut_file)
+            ccio_path = path_file(provider_nit, provider_name, "ccio", ccio_file)
+            other_docs_path = path_file(provider_nit, provider_name, "other_docs", other_docs_file)
+            create_provider(username, provider_name, provider_nit, provider_email, provider_contact, provider_contact_phone, provider_category, provider_auth_activities, lic_amb_path, rut_path, ccio_path, other_docs_path)
             save_file(lic_amb_file, lic_amb_path)
             save_file(rut_file, rut_path)
             save_file(ccio_file, ccio_path)
@@ -127,35 +139,28 @@ def create_provider_dialog():
             st.rerun()
 
 def display_providers_table(providers_data):
-    rows = pd.DataFrame(providers_data)
-    rows = rows[["id", "provider_name","provider_category", "created_at", "updated_at"]]
-    rows.set_index("id", inplace=True)
-    st.dataframe(
-        rows,
-        width="stretch",
-        column_config={
-            "id": "ID del proveedor",
-            "provider_name": "Nombre del proveedor",
-            "provider_category": st.column_config.MultiselectColumn(
-                "Categorías del proveedor",
-                options=[
-                    "Aceites",
-                    "Biosanitarios",
-                    "RAEE y peligrosos",
-                    "Pinturas"
-                ],
-                color=["blue", "green", "orange", "red"]
-            ),
-            "created_at": st.column_config.DateColumn(
-                "Creado en",
-                format="D/M/Y H:M"
-            ),
-            "updated_at": st.column_config.DateColumn(
-                "Actualizado en",
-                format="D/M/Y H:M"
-            )
-        }
-    ) 
+    try:
+        rows = pd.DataFrame(providers_data)
+        rows = rows[["id", "provider_name","provider_category", "created_at", "updated_at"]]
+        rows.set_index("id", inplace=True)
+        st.dataframe(
+            rows,
+            width="stretch",
+            column_config={
+                "id": "ID del proveedor",
+                "provider_name": "Nombre del proveedor",
+                "created_at": st.column_config.DateColumn(
+                    "Creado en",
+                    format="D/M/Y H:M"
+                ),
+                "updated_at": st.column_config.DateColumn(
+                    "Actualizado en",
+                    format="D/M/Y H:M"
+                )
+            }
+        )
+    except Exception as e:
+        st.write(f"No hay datos disponibles") 
 
 ### Page layout and logic ###
 authenticator = stauth.Authenticate('config.yaml')
@@ -178,6 +183,7 @@ if 'authentication_status' not in ss:
 
 ### Main page code ###
 if ss["authentication_status"]:
+    get_enum_values("residue_type")
     columns = st.columns(6)
     with columns[0]:
         st.page_link("./pages/login_home.py", label="🏠 Inicio", use_container_width=True)
@@ -204,8 +210,8 @@ if ss["authentication_status"]:
 
     st.subheader("📋 Lista de proveedores")
 
-    display_providers_table(list_all_providers())
+    display_providers_table(list_all_providers(200))
 
 
 else:
-    st.switch_page("./pages/Inicio.py")
+    st.switch_page("./pages/login_home.py")
