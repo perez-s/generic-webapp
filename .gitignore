@@ -1,5 +1,4 @@
 .venv/
 later/
-.streamlit/
 .env
 __pycache__/
