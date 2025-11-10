@@ -30,6 +30,13 @@ if 'authentication_status' not in ss:
 if ss["authentication_status"]:
     st.set_page_config(page_title="Bienvenido a WeroApp", layout="wide")
 
+
+    columns = st.columns(6)
+    with columns[0]:
+        st.page_link("./pages/login_home.py", label="🏠 Inicio", use_container_width=True)
+        authenticator.logout(button_name='Cerrar sesión', location='main', use_container_width=True, key='logoutformats')
+    with columns[5]:
+        st.image("./resources/Logo2.png", width=10, use_container_width=True)
     col1, col2, col3 = st.columns([1, 1, 1])
 
     with col1:
@@ -38,7 +45,7 @@ if ss["authentication_status"]:
             title="Residuos Ordinarios",
             description="Gestiona la recolección y el reciclaje de residuos ordinarios",
             icon="🗑️",
-            color_theme="green",
+            color_theme="blue",
             height="200px",
             width="200px",
             key="demo_tile"
@@ -49,7 +56,7 @@ if ss["authentication_status"]:
             title="Residuos Peligrosos",
             description="Gestiona la recolección y el reciclaje de residuos peligrosos",
             icon="☣️",
-            color_theme="red",
+            color_theme="blue",
             height="200px",
             width="200px",
             key="demo_tile2"
@@ -60,7 +67,7 @@ if ss["authentication_status"]:
             title="Madera",
             description="Gestiona la recolección y el reciclaje de residuos de madera",
             icon="🪵",
-            color_theme="brown",
+            color_theme="blue",
             height="200px",
             width="200px",
             key="demo_tile3"
@@ -71,7 +78,7 @@ if ss["authentication_status"]:
             title="RCD",
             description="Gestiona la recolección y el reciclaje de residuos de construcción y demolición",
             icon="🏗️",
-            color_theme="gray",
+            color_theme="blue",
             height="200px",
             width="200px",
             key="demo_tile4"

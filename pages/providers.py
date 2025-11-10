@@ -178,8 +178,12 @@ if 'authentication_status' not in ss:
 
 ### Main page code ###
 if ss["authentication_status"]:
-    authenticator.logout(button_name='Cerrar sesión', location='main', use_container_width=True, key='logoutformats')
-
+    columns = st.columns(6)
+    with columns[0]:
+        st.page_link("./pages/login_home.py", label="🏠 Inicio", use_container_width=True)
+        authenticator.logout(button_name='Cerrar sesión', location='main', use_container_width=True, key='logoutformats')
+    with columns[5]:
+        st.image("./resources/Logo2.png", width=10, use_container_width=True)
     ### Formulario de solicitud de servicio ###
     st.subheader("📋 Creación de proveedor")
 

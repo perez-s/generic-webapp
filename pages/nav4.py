@@ -28,8 +28,13 @@ if 'authentication_status' not in ss:
     st.switch_page('./pages/login_home.py')
 
 if ss["authentication_status"]:
-    authenticator = ss.get('authapp')
-    st.set_page_config(page_title="Bienvenido a WeroApp", layout="wide")
+    columns = st.columns(6)
+    with columns[0]:
+        st.page_link("./pages/login_home.py", label="🏠 Inicio", use_container_width=True)
+        authenticator.logout(button_name='Cerrar sesión', location='main', use_container_width=True, key='logoutformats')
+    with columns[5]:
+        st.image("./resources/Logo2.png", width=10, use_container_width=True)
+    col1, col2, col3 = st.columns([1, 1, 1])
 
     col1, col2, col3 = st.columns([1, 1, 1])
 
@@ -50,7 +55,7 @@ if ss["authentication_status"]:
             title="Solicitudes de recolección",
             description="Gestiona las solicitudes de recolección de materiales",
             icon="📝",
-            color_theme="orange",
+            color_theme="blue",
             height="200px",
             width="200px",
             key="demo_tile2"
@@ -61,7 +66,7 @@ if ss["authentication_status"]:
             title="Gestión de Solicitudes",
             description="Gestiona las solicitudes de recolección de materiales",
             icon="🛠️",
-            color_theme="purple",
+            color_theme="blue",
             height="200px",
             width="200px",
             key="demo_tile3"
