@@ -6,11 +6,13 @@ import os
 import locale
 locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
 
+# Cargar variables de entorno y configurar Supabase
 load_dotenv()
 supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(supabase_url, supabase_key)
 
+# Diálogo para responder a una solicitud
 @st.dialog("Responder solicitud")
 def answer_request():
     with st.form(f"approval_form_{req['id']}"):
@@ -24,7 +26,7 @@ def answer_request():
             if response:
                 st.success(f"Solicitud #{req['id']} actualizada a '{new_status}'")
 
-
+# Interfaz principal de gestión de solicitudes
 st.title("🚚 Gestión de solicitudes")
 
 def request_approval(request_id: int, new_status: str, admin_note: str):
