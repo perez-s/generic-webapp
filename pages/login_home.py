@@ -108,6 +108,7 @@ authenticator.login(location='main', fields={'Form name':'Iniciar sesión', 'Use
 
 if ss["authentication_status"]:
     logout()
+    st.set_page_config(page_title="Bienvenido a WeroApp", layout="wide")
 
     col1, col2, col3 = st.columns([1, 1, 1])
     
