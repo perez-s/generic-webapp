@@ -15,8 +15,6 @@ from datetime import datetime, timezone, timedelta
 import os
 import locale
 import pandas as pd
-from dataframe_with_button import static_dataframe
-from dataframe_with_button import editable_dataframe
 
 locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
 
