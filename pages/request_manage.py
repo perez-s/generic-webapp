@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from datetime import datetime, timezone, timedelta
 import os
 import locale
+
 locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
 
 # Cargar variables de entorno y configurar Supabase
@@ -13,7 +14,7 @@ supabase_key = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(supabase_url, supabase_key)
 
 # Diálogo para responder a una solicitud
-@st.dialog("Responder solicitud")
+@st.dialog("Responder solicitud", width="large")
 def answer_request():
     with st.form(f"approval_form_{req['id']}"):
         decision = st.selectbox("Decisión", ["Aprobar", "Rechazar"], key=f"decision_{req['id']}")
@@ -30,7 +31,7 @@ def answer_request():
 st.title("🚚 Gestión de solicitudes")
 
 def request_approval(request_id: int, new_status: str, admin_note: str):
-    now = datetime.now(timezone(timedelta(hours=5))).isoformat()
+    now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
     try:
         response = supabase.table("requests").update({
             "status": new_status,
@@ -43,14 +44,14 @@ def request_approval(request_id: int, new_status: str, admin_note: str):
 
 st.subheader("✅ Aprobar o rechazar solicitudes")
 requests = supabase.table("requests").select(
-    "id, username, service_type, estimated_weight_kg, details, status, admin_note, created_at"
+    "id, username, service_type, estimated_amount, details, status, admin_note, created_at"
 ).eq("status", "Pendiente").order("id").execute()
 for req in requests.data:
     with st.container(border=True):
         created_at = datetime.fromisoformat(req['created_at'].replace('Z', '+00:00')).strftime("%Y %B  %d %H:%M %Z")
         st.markdown(f"**#{req['id']}** — {req['service_type']} • {created_at}")
         st.markdown(f"- **Usuario:** {req['username']}")
-        st.markdown(f"- **Peso estimado (kg):** {req['estimated_weight_kg']}")
+        st.markdown(f"- **Peso estimado (kg):** {req['estimated_amount']}")
         st.markdown(f"- **Detalles:** {req['details']}")
         
         if st.button("Responder solicitud", key=f"answer_btn_{req['id']}"):

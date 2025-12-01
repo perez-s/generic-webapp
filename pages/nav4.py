@@ -9,31 +9,13 @@ from pathlib import Path
 import modules.common as mc
 from streamlit_tile import streamlit_tile
 
-authenticator = stauth.Authenticate('config.yaml')
-CONFIG_FILENAME = 'config.yaml'
-def get_roles():
-    """Gets user roles based on config file."""
-    with open(CONFIG_FILENAME) as file:
-        config = yaml.load(file, Loader=SafeLoader)
-
-    if config is not None:
-        cred = config['credentials']
-    else:
-        cred = {}
-
-    return {username: user_info['role'] for username, user_info in cred['usernames'].items() if 'role' in user_info}
 mc.protected_content()
 
 if 'authentication_status' not in ss:
     st.switch_page('./pages/login_home.py')
 
 if ss["authentication_status"]:
-    columns = st.columns(6)
-    with columns[0]:
-        st.page_link("./pages/login_home.py", label="🏠 Inicio", use_container_width=True)
-        authenticator.logout(button_name='Cerrar sesión', location='main', use_container_width=True, key='logoutformats')
-    with columns[5]:
-        st.image("./resources/Logo2.png", width=10, use_container_width=True)
+    mc.logout_and_home()
     col1, col2, col3 = st.columns([1, 1, 1])
 
     col1, col2, col3 = st.columns([1, 1, 1])

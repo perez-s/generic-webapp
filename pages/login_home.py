@@ -90,6 +90,14 @@ def purple_form():
     """
     st.write(css, unsafe_allow_html=True)   
 
+def logout():
+    columns = st.columns(6)
+    with columns[0]:
+        authenticator.logout(button_name='Cerrar sesión', location='main', use_container_width=True, key='logoutformats')
+    with columns[5]:
+        st.image("./resources/Logo2.png", width=10, use_container_width=True)
+    st.set_page_config(page_title="Bienvenido a WeroApp", layout="wide")
+
 st.set_page_config(page_title="Bienvenido a WeroApp", layout="centered")
 
 if 'authapp' not in ss:
@@ -99,12 +107,7 @@ authenticator.login(location='main', fields={'Form name':'Iniciar sesión', 'Use
 
 
 if ss["authentication_status"]:
-    columns = st.columns(6)
-    with columns[0]:
-        authenticator.logout(button_name='Cerrar sesión', location='main', use_container_width=True, key='logoutformats')
-    with columns[5]:
-        st.image("./resources/Logo2.png", width=10, use_container_width=True)
-    st.set_page_config(page_title="Bienvenido a WeroApp", layout="wide")
+    logout()
 
     col1, col2, col3 = st.columns([1, 1, 1])
     
