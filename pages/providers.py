@@ -536,20 +536,20 @@ def display_all_providers_table(providers_data):
         if selected_count > 0 and selected_count < 2:
             with col1:    
                 if st.button("🔁 Editar solicitud", width="stretch"):
-                    dafault_options = select_provider(displayed_table[displayed_table["Seleccionar"]].index.tolist()[0])
+                    default_options = select_provider(displayed_table[displayed_table["Seleccionar"]].index.tolist()[0])
                     update_provider_form(
                         id=displayed_table[displayed_table["Seleccionar"]].index.tolist()[0],
-                        provider_name_default=dafault_options["provider_name"],
-                        provider_nit_default=dafault_options["provider_nit"],
-                        provider_email_default=dafault_options["provider_email"],
-                        provider_contact_default=dafault_options["provider_contact"],
-                        provider_contact_phone_default=dafault_options["provider_contact_phone"],
-                        provider_category_default=dafault_options["provider_category"],
-                        provider_activity_default=dafault_options["provider_activity"],
-                        lic_amb_path_default=dafault_options["lic_amb_path"],
-                        rut_path_default=dafault_options["rut_path"],
-                        ccio_path_default=dafault_options["ccio_path"],
-                        other_docs_path_default=dafault_options["other_docs_path"]
+                        provider_name_default=default_options["provider_name"],
+                        provider_nit_default=default_options["provider_nit"],
+                        provider_email_default=default_options["provider_email"],
+                        provider_contact_default=default_options["provider_contact"],
+                        provider_contact_phone_default=default_options["provider_contact_phone"],
+                        provider_category_default=default_options["provider_category"],
+                        provider_activity_default=default_options["provider_activity"],
+                        lic_amb_path_default=default_options["lic_amb_path"],
+                        rut_path_default=default_options["rut_path"],
+                        ccio_path_default=default_options["ccio_path"],
+                        other_docs_path_default=default_options["other_docs_path"]
                     )
         if selected_count > 0 or selected_count >= 2:
             with col2:
@@ -567,7 +567,8 @@ if 'authentication_status' not in ss:
 
 ### Main page code ###
 if ss["authentication_status"]:
-
+    
+    st.page_link("./pages/nav4.py", label="⬅️ Atrás", use_container_width=True)
     mc.logout_and_home()
 
     ### Formulario de solicitud de servicio ###

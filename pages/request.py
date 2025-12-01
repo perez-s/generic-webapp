@@ -126,7 +126,7 @@ def create_request(username: str, request_category:list, measure_type: str, esti
 def list_all_requests(limit=200):
     try:
         requests = supabase.table("requests").select(
-            "id, username, service_type, request_category, measure_type, estimated_amount, details, status, admin_note, created_at, updated_at"
+            "id, username, service_type, request_category, measure_type, estimated_amount, details, status, admin_note, created_at, updated_at, assigned_provider, pickup_date"
         ).order("id", desc=True).limit(limit).execute()
         return requests.data
     except Exception as e:
@@ -189,7 +189,11 @@ def display_pending_requests_table(requests_data):
                 ),
                 "measure_type": "Tipo de unidad",
                 "estimated_amount": "Cantidad estimada",
-                "status": "Estado",
+                "status": st.column_config.MultiselectColumn(
+                    "Estado",
+                    options=get_enum_values("status_type"),
+                    color=["blue", "green", "red"]
+                ),
                 "created_at": st.column_config.DateColumn(
                     "Creado en",
                     format="distance"
@@ -205,26 +209,26 @@ def display_pending_requests_table(requests_data):
         if selected_count > 0 and selected_count < 2:
             with col1:    
                 if st.button("🔁 Editar solicitud", width="stretch"):
-                    dafault_options = select_request(displayed_table[displayed_table["Seleccionar"]].index.tolist()[0])
+                    default_options = select_request(displayed_table[displayed_table["Seleccionar"]].index.tolist()[0])
                     update_request_form(
                         id=displayed_table[displayed_table["Seleccionar"]].index.tolist()[0],
-                        request_category_default=dafault_options["request_category"],
-                        measure_type_default=dafault_options["measure_type"],
-                        estimated_amount_default=dafault_options["estimated_amount"],
-                        details_default=dafault_options["details"]
+                        request_category_default=default_options["request_category"],
+                        measure_type_default=default_options["measure_type"],
+                        estimated_amount_default=default_options["estimated_amount"],
+                        details_default=default_options["details"]
                     )
-                    st.toast("🚧 Funcionalidad en desarrollo")
         if selected_count > 0 or selected_count >= 2:
             with col2:
                 if st.button("🗑️ Eliminar solicitudes", width="stretch"):
-                    delete_request(displayed_table[displayed_table["Seleccionar"]].index.tolist())
-                    st.rerun()               
+                    confirm_delete_dialog(displayed_table[displayed_table["Seleccionar"]].index.tolist())
+           
     except Exception as e:
             st.write(f"No hay solicitudes pendientes disponibles") 
+
 def display_all_requests_table(requests_data):
     try:
         rows = pd.DataFrame(requests_data)
-        rows = rows[["id","status", "request_category","measure_type","estimated_amount", "created_at", "updated_at"]]
+        rows = rows[["id","status", "request_category","measure_type","estimated_amount", "assigned_provider", "pickup_date", "admin_note","created_at", "updated_at"]]
         rows["created_at"] = pd.to_datetime(rows["created_at"])
         rows["updated_at"] = pd.to_datetime(rows["updated_at"])
         rows.set_index("id", inplace=True)
@@ -241,7 +245,17 @@ def display_all_requests_table(requests_data):
                 ),
                 "measure_type": "Tipo de unidad",
                 "estimated_amount": "Cantidad estimada",
-                "status": "Estado",
+                "status": st.column_config.MultiselectColumn(
+                    "Estado",
+                    options=get_enum_values("status_type"),
+                    color=["blue", "green", "red"]
+                ),
+                "assigned_provider": "Proveedor asignado",
+                "pickup_date": st.column_config.DateColumn(
+                    "Fecha de recogida",
+                    format="DD/MM/YYYY"
+                ),
+                "admin_note": "Nota del administrador",
                 "created_at": st.column_config.DateColumn(
                     "Creado en",
                     format="distance"
@@ -255,6 +269,24 @@ def display_all_requests_table(requests_data):
     except Exception as e:
         st.write(f"No hay solicitudes disponibles")
 
+@st.dialog("⚠️ Confirmar eliminación")
+def confirm_delete_dialog(request_ids: list):
+    """Confirmation dialog for deleting requests."""
+    st.warning(f"¿Estás seguro de que deseas eliminar {len(request_ids)} solicitud(es)?")
+    st.markdown("Esta acción eliminará:")
+    st.markdown("- Los registros de la base de datos")
+    st.error("⚠️ Esta acción no se puede deshacer.")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("❌ Cancelar", width="stretch", type="secondary"):
+            st.rerun()
+    with col2:
+        if st.button("🗑️ Eliminar", width="stretch", type="primary"):
+            if delete_request(request_ids):
+                time.sleep(1)
+                st.rerun()
+
 ### Page layout and logic ###
 if 'authentication_status' not in ss:
     st.switch_page('./pages/login_home.py')
@@ -265,7 +297,7 @@ if ss["authentication_status"]:
     ### Navigation template ###
 
     ### Formulario de solicitud de servicio ###
-    
+    st.page_link("./pages/nav4.py", label="⬅️ Atrás", use_container_width=True)
     mc.logout_and_home()
 
     st.subheader("📋 Solicitud de servicio")
