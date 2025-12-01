@@ -104,7 +104,7 @@ if 'authapp' not in ss:
     ss.authapp = authenticator
 
 authenticator.login(location='main', fields={'Form name':'Iniciar sesión', 'Username':'Usuario', 'Password':'Contraseña', 'Login':'Ingresar', 'Captcha':'Captcha'}, key='loginhome1')
-
+st.write("Pista: usuario 'wero-caracol' y contraseña 'wero-caracol123' para acceder como administrador.")
 
 if ss["authentication_status"]:
     logout()
