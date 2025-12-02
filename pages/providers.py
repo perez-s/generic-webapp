@@ -523,29 +523,29 @@ def provider_detail_view(provider_id: int):
         # Documents section with inline PDF viewers
         with st.expander("📄 Documentos soporte", expanded=False):
             # Licencia ambiental
-            st.markdown("**Licencia ambiental**")
-            lic_amb_path = provider.get('lic_amb_path', '')
-            if lic_amb_path:
-                lic_amb_list = [p.strip() for p in lic_amb_path.split(",") if p.strip()]
-                if lic_amb_list:
-                    has_files = False
-                    for idx, doc_path in enumerate(lic_amb_list):
-                        if os.path.exists(doc_path):
-                            has_files = True
-                            with st.expander(f"📄 Ver Licencia ambiental {idx+1}"):
-                                try:
-                                    with open(doc_path, "rb") as pdf_file:
-                                        pdf_data = pdf_file.read()
-                                        st.pdf(pdf_data, key=f"view_lic_amb_pdf_{idx}")
-                                except Exception as e:
-                                    st.error(f"Error cargando PDF: {e}")
-                    if not has_files:
+            with st.expander("📄 Licencia ambiental", expanded=False):
+                lic_amb_path = provider.get('lic_amb_path', '')
+                if lic_amb_path:
+                    lic_amb_list = [p.strip() for p in lic_amb_path.split(",") if p.strip()]
+                    if lic_amb_list:
+                        has_files = False
+                        for idx, doc_path in enumerate(lic_amb_list):
+                            if os.path.exists(doc_path):
+                                has_files = True
+                                with st.expander(f"📄 Ver Licencia ambiental {idx+1}"):
+                                    try:
+                                        with open(doc_path, "rb") as pdf_file:
+                                            pdf_data = pdf_file.read()
+                                            st.pdf(pdf_data, key=f"view_lic_amb_pdf_{idx}")
+                                    except Exception as e:
+                                        st.error(f"Error cargando PDF: {e}")
+                        if not has_files:
+                            st.caption("No hay archivos disponibles")
+                    else:
                         st.caption("No hay archivos disponibles")
                 else:
                     st.caption("No hay archivos disponibles")
-            else:
-                st.caption("No hay archivos disponibles")
-            
+    
             # RUT
             st.markdown("**RUT**")
             rut_path = provider.get('rut_path', '')
@@ -589,28 +589,28 @@ def provider_detail_view(provider_id: int):
                 st.caption("No hay archivo disponible")
 
             # Otros documentos
-            st.markdown("**Otros documentos**")
-            other_docs_path = provider.get('other_docs_path', '')
-            if other_docs_path:
-                other_docs_list = [p.strip() for p in other_docs_path.split(",") if p.strip()]
-                if other_docs_list:
-                    has_files = False
-                    for idx, doc_path in enumerate(other_docs_list):
-                        if os.path.exists(doc_path):
-                            has_files = True
-                            with st.expander(f"📄 Ver Documento {idx+1}"):
-                                try:
-                                    with open(doc_path, "rb") as pdf_file:
-                                        pdf_data = pdf_file.read()
-                                        st.pdf(pdf_data, key=f"view_other_docs_pdf_{idx}")
-                                except Exception as e:
-                                    st.error(f"Error cargando PDF: {e}")
-                    if not has_files:
+            with st.expander("📄 Otros documentos", expanded=False):
+                other_docs_path = provider.get('other_docs_path', '')
+                if other_docs_path:
+                    other_docs_list = [p.strip() for p in other_docs_path.split(",") if p.strip()]
+                    if other_docs_list:
+                        has_files = False
+                        for idx, doc_path in enumerate(other_docs_list):
+                            if os.path.exists(doc_path):
+                                has_files = True
+                                with st.expander(f"📄 Ver Documento {idx+1}"):
+                                    try:
+                                        with open(doc_path, "rb") as pdf_file:
+                                            pdf_data = pdf_file.read()
+                                            st.pdf(pdf_data, key=f"view_other_docs_pdf_{idx}")
+                                    except Exception as e:
+                                        st.error(f"Error cargando PDF: {e}")
+                        if not has_files:
+                            st.caption("No hay archivos disponibles")
+                    else:
                         st.caption("No hay archivos disponibles")
                 else:
                     st.caption("No hay archivos disponibles")
-            else:
-                st.caption("No hay archivos disponibles")
     
     except Exception as e:
         st.error(f"Error cargando detalles del proveedor: {e}")
