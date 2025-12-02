@@ -126,7 +126,7 @@ def create_request(username: str, request_category:list, measure_type: str, esti
 def list_all_requests(limit=200):
     try:
         requests = supabase.table("requests").select(
-            "id, username, service_type, request_category, measure_type, estimated_amount, details, status, admin_note, created_at, updated_at, assigned_provider, pickup_date"
+            "id, username, service_type, request_category, measure_type, estimated_amount, details, status, admin_note, created_at, updated_at"
         ).order("id", desc=True).limit(limit).execute()
         return requests.data
     except Exception as e:
@@ -228,7 +228,7 @@ def display_pending_requests_table(requests_data):
 def display_all_requests_table(requests_data):
     try:
         rows = pd.DataFrame(requests_data)
-        rows = rows[["id","status", "request_category","measure_type","estimated_amount", "assigned_provider", "pickup_date", "admin_note","created_at", "updated_at"]]
+        rows = rows[["id","status", "request_category","measure_type","estimated_amount", "admin_note","created_at", "updated_at"]]
         rows["created_at"] = pd.to_datetime(rows["created_at"])
         rows["updated_at"] = pd.to_datetime(rows["updated_at"])
         rows.set_index("id", inplace=True)
@@ -249,11 +249,6 @@ def display_all_requests_table(requests_data):
                     "Estado",
                     options=get_enum_values("status_type"),
                     color=["blue", "green", "red"]
-                ),
-                "assigned_provider": "Proveedor asignado",
-                "pickup_date": st.column_config.DateColumn(
-                    "Fecha de recogida",
-                    format="DD/MM/YYYY"
                 ),
                 "admin_note": "Nota del administrador",
                 "created_at": st.column_config.DateColumn(
