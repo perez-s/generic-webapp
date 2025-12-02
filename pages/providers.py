@@ -621,12 +621,15 @@ def display_all_providers_table(providers_data):
         rows = rows[["id", "provider_name", "provider_nit", "provider_category", "created_at", "updated_at"]]
         rows["created_at"] = pd.to_datetime(rows["created_at"])
         rows["updated_at"] = pd.to_datetime(rows["updated_at"])
+        # Add status column based on current year vs updated_at year
+        current_year = pd.Timestamp.now().year
+        rows["Estado"] = rows["updated_at"].dt.year.apply(lambda y: "Actualizado" if y == current_year else "Vencido")
         rows.set_index("id", inplace=True)
         rows["Seleccionar"] = False
         displayed_table = st.data_editor(
             rows,
             width="stretch",
-            disabled=["id","provider_name", "provider_nit", "provider_category", "created_at", "updated_at"],
+            disabled=["id","provider_name", "provider_nit", "provider_category", "created_at", "updated_at", "Estado"],
             column_config={
                 "id": "ID",
                 "provider_name": "Nombre del proveedor",
@@ -643,6 +646,11 @@ def display_all_providers_table(providers_data):
                 "updated_at": st.column_config.DateColumn(
                     "Última modificación",
                     format="DD/MM/YY HH:mm"
+                ),
+                "Estado": st.column_config.MultiselectColumn(
+                    "Estado",
+                    options=["Actualizado", "Vencido"],
+                    color=["green", "red"]
                 )
             }
         )
@@ -700,9 +708,7 @@ if ss["authentication_status"]:
 
     st.page_link("./pages/nav4.py", label="⬅️ Atrás", use_container_width=True)
     mc.logout_and_home()
-
-    st.divider()
-
+    
     ### Formulario de solicitud de servicio ###
     st.subheader("📋 Gestión de proveedores")
 
