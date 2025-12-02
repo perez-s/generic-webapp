@@ -132,114 +132,7 @@ def update_provider(
         st.error(f"Error actualizando proveedor: {e}")
 
 @st.dialog("Actualizar proveedor", width="large")
-def update_provider_form(id: int,provider_name_default: str, provider_nit_default: int, provider_email_default: str, provider_contact_default: str, provider_contact_phone_default: int, provider_category_default: list, provider_activity_default: list, lic_amb_path_default: str, rut_path_default: str, ccio_path_default: str, other_docs_path_default: str, certificado_bancario_path_default: str = ""):
-    
-    # Download section (outside form)
-    # with st.expander("📥 Descargar documentos actuales", expanded=False):
-    #     col1, col2 = st.columns(2)
-        
-    #     with col1:
-    #         st.markdown("**Licencia ambiental**")
-    #         if lic_amb_path_default:
-    #             # Handle comma-separated paths for multiple files
-    #             lic_amb_list = [p.strip() for p in lic_amb_path_default.split(",") if p.strip()]
-    #             if lic_amb_list:
-    #                 has_files = False
-    #                 for idx, doc_path in enumerate(lic_amb_list):
-    #                     if os.path.exists(doc_path):
-    #                         has_files = True
-    #                         with open(doc_path, "rb") as file:
-    #                             filename = os.path.basename(doc_path)
-    #                             # Extract timestamp from filename (format: provider_nit_provider_name_lic_amb_YYYYMMDDHHMMSS_idx.ext)
-    #                             parts = filename.rsplit('_', 2)
-    #                             if len(parts) >= 2:
-    #                                 timestamp_str = parts[-2]
-    #                                 try:
-    #                                     dt = datetime.strptime(timestamp_str, "%Y%m%d%H%M%S")
-    #                                     date_label = dt.strftime("%Y-%m-%d %H:%M")
-    #                                 except:
-    #                                     date_label = filename
-    #                             else:
-    #                                 date_label = filename
-                                
-    #                             st.download_button(
-    #                                 label=f"⬇️ Descargar licencia ambiental {idx+1} ({date_label})",
-    #                                 data=file,
-    #                                 file_name=os.path.basename(doc_path),
-    #                                 mime="application/octet-stream",
-    #                                 key=f"download_lic_amb_{idx}"
-    #                             )
-    #                 if not has_files:
-    #                     st.caption("No hay archivos actuales")
-    #             else:
-    #                 st.caption("No hay archivos actuales")
-    #         else:
-    #             st.caption("No hay archivos actuales")
-            
-    #         st.markdown("**RUT**")
-    #         if rut_path_default and os.path.exists(rut_path_default):
-    #             with open(rut_path_default, "rb") as file:
-    #                 st.download_button(
-    #                     label="⬇️ Descargar",
-    #                     data=file,
-    #                     file_name=os.path.basename(rut_path_default),
-    #                     mime="application/octet-stream",
-    #                     key="download_rut"
-    #                 )
-    #         else:
-    #             st.caption("No hay archivo actual")
-            
-    #     with col2:
-    #         st.markdown("**Cámara de comercio**")
-    #         if ccio_path_default and os.path.exists(ccio_path_default):
-    #             with open(ccio_path_default, "rb") as file:
-    #                 st.download_button(
-    #                     label="⬇️ Descargar",
-    #                     data=file,
-    #                     file_name=os.path.basename(ccio_path_default),
-    #                     mime="application/octet-stream",
-    #                     key="download_ccio"
-    #                 )
-    #         else:
-    #             st.caption("No hay archivo actual")
-            
-    #         st.markdown("**Otros documentos**")
-    #         if other_docs_path_default:
-    #             # Handle comma-separated paths for multiple files
-    #             other_docs_list = [p.strip() for p in other_docs_path_default.split(",") if p.strip()]
-    #             if other_docs_list:
-    #                 has_files = False
-    #                 for idx, doc_path in enumerate(other_docs_list):
-    #                     if os.path.exists(doc_path):
-    #                         has_files = True
-    #                         with open(doc_path, "rb") as file:
-    #                             filename = os.path.basename(doc_path)
-    #                             parts = filename.rsplit('_', 2)
-    #                             if len(parts) >= 2:
-    #                                 timestamp_str = parts[-2]
-    #                                 try:
-    #                                     dt = datetime.strptime(timestamp_str, "%Y%m%d%H%M%S")
-    #                                     date_label = dt.strftime("%Y-%m-%d %H:%M")
-    #                                 except:
-    #                                     date_label = filename
-    #                             else:
-    #                                 date_label = filename
-    #                             st.download_button(
-    #                                 label=f"⬇️ Descargar otros documentos {idx+1} ({date_label})",
-    #                                 data=file,
-    #                                 file_name=os.path.basename(doc_path),
-    #                                 mime="application/octet-stream",
-    #                                 key=f"download_other_docs_{idx}"
-    #                             )
-    #                 if not has_files:
-    #                     st.caption("No hay archivos actuales")
-    #             else:
-    #                 st.caption("No hay archivos actuales")
-    #         else:
-    #             st.caption("No hay archivos actuales")
-    
-    # st.divider()
-    
+def update_provider_form(id: int,provider_name_default: str, provider_nit_default: int, provider_email_default: str, provider_contact_default: str, provider_contact_phone_default: int, provider_category_default: list, provider_activity_default: list, lic_amb_path_default: str, rut_path_default: str, ccio_path_default: str, other_docs_path_default: str, certificado_bancario_path_default: str = ""):    
     # Form section
     update_form = st.form("update_provider_form")
     with update_form:
@@ -423,8 +316,8 @@ def format_date(date_str: str) -> str:
 
 def path_file(provider_nit, provider_name, file_name, upload_file) -> str:
     try:
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        return f"uploads/{provider_nit}_{provider_name}_{file_name}_{timestamp}.{upload_file.type.split('/')[-1]}"
+        ext = upload_file.type.split('/')[-1]
+        return f"uploads/{provider_nit}_{provider_name}_{file_name}.{ext}"
     except Exception as e:
         st.error(f"Error generando ruta de archivo: {e}")
 
