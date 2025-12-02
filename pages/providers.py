@@ -99,6 +99,7 @@ def update_provider(
         provider_email: str, 
         provider_contact: str, 
         provider_contact_phone: int, 
+        provider_website: str,
         provider_category: list,
         provider_activity: list, 
         lic_amb_path: str, 
@@ -115,6 +116,7 @@ def update_provider(
             "provider_email": provider_email,
             "provider_contact": provider_contact,
             "provider_contact_phone": provider_contact_phone,
+            "provider_website": provider_website,
             "provider_category": provider_category,
             "provider_activity": provider_activity,
             "lic_amb_path": lic_amb_path,
@@ -132,7 +134,7 @@ def update_provider(
         st.error(f"Error actualizando proveedor: {e}")
 
 @st.dialog("Actualizar proveedor", width="large")
-def update_provider_form(id: int,provider_name_default: str, provider_nit_default: int, provider_email_default: str, provider_contact_default: str, provider_contact_phone_default: int, provider_category_default: list, provider_activity_default: list, lic_amb_path_default: str, rut_path_default: str, ccio_path_default: str, other_docs_path_default: str, certificado_bancario_path_default: str = ""):    
+def update_provider_form(id: int,provider_name_default: str, provider_nit_default: int, provider_email_default: str, provider_contact_default: str, provider_contact_phone_default: int, provider_website_default: str, provider_category_default: list, provider_activity_default: list, lic_amb_path_default: str, rut_path_default: str, ccio_path_default: str, other_docs_path_default: str, certificado_bancario_path_default: str = ""):    
     # Form section
     update_form = st.form("update_provider_form")
     with update_form:
@@ -154,6 +156,7 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
 
         with col2:
             provider_contact_phone = st.number_input("Teléfono", step=1, format="%d", value=provider_contact_phone_default)
+            provider_website = st.text_input("Sitio web (opcional)", value=provider_website_default, placeholder="https://ejemplo.com")
             provider_category = st.multiselect(
                 "Tipos de residuos",
                 options=get_enum_values("residue_type"),
@@ -235,12 +238,12 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
                 certificado_bancario_path = path_file(provider_nit, provider_name, "certificado_bancario", certificado_bancario_file)
                 save_file(certificado_bancario_file, certificado_bancario_path)
             
-            update_provider(id, provider_name, provider_nit, provider_email, provider_contact, provider_contact_phone, provider_category, provider_auth_activities, lic_amb_path, rut_path, ccio_path, other_docs_path, certificado_bancario_path, now)     
+            update_provider(id, provider_name, provider_nit, provider_email, provider_contact, provider_contact_phone, provider_website, provider_category, provider_auth_activities, lic_amb_path, rut_path, ccio_path, other_docs_path, certificado_bancario_path, now)     
 
 def select_provider(provider_id: int):
     try:
         provider = supabase.table("providers").select(
-            "provider_name, provider_nit, provider_email, provider_contact, provider_contact_phone, provider_category, provider_activity, lic_amb_path, rut_path, ccio_path, other_docs_path, certificado_bancario_path"
+            "provider_name, provider_nit, provider_email, provider_contact, provider_contact_phone, provider_website, provider_category, provider_activity, lic_amb_path, rut_path, ccio_path, other_docs_path, certificado_bancario_path"
         ).eq("id", provider_id).execute()
         return provider.data[0] if provider.data else None
     except Exception as e:
@@ -260,6 +263,7 @@ def create_provider(
         provider_email: str, 
         provider_contact: str, 
         provider_contact_phone: int, 
+    provider_website: str,
         provider_category: list,
         provider_activity: list, 
         lic_amb_path: str, 
@@ -278,6 +282,7 @@ def create_provider(
             "provider_email": provider_email,
             "provider_contact": provider_contact,
             "provider_contact_phone": provider_contact_phone,
+            "provider_website": provider_website,
             "provider_category": provider_category,
             "provider_activity": provider_activity,
             "lic_amb_path": lic_amb_path,
@@ -367,6 +372,7 @@ def create_provider_dialog():
 
         with col2:
             provider_contact_phone = st.number_input("Teléfono", step=1, format="%d")
+            provider_website = st.text_input("Sitio web (opcional)", placeholder="https://ejemplo.com")
             provider_category = st.multiselect(
                 "Tipos de residuos",
                 options=get_enum_values("residue_type")
@@ -424,6 +430,7 @@ def create_provider_dialog():
                     provider_email,
                     provider_contact,
                     provider_contact_phone,
+                    provider_website,
                     provider_category,
                     provider_auth_activities,
                     lic_amb_path,
@@ -502,6 +509,11 @@ def provider_detail_view(provider_id: int):
             with col2:
                 st.markdown(f"**Contacto:** {provider.get('provider_contact', 'N/A')}")
                 st.markdown(f"**Teléfono:** {provider.get('provider_contact_phone', 'N/A')}")
+                website = provider.get('provider_website', '')
+                if website:
+                    st.markdown(f"**Sitio web:** [{website}]({website})")
+                else:
+                    st.markdown("**Sitio web:** No especificado")
                         
             with col1:
                 categories = provider.get('provider_category', [])
