@@ -47,7 +47,7 @@ def update_request_form(id:int, request_category_default:list, measure_type_defa
         with col1:
             measure_type = st.radio("Tipo de unidades", options=["m3", "kg"], index=["m3", "kg"].index(measure_type_default))
         with col2:
-            estimated_amount = st.number_input("Cantidad estimada", min_value=1, max_value=100, step=1, value=estimated_amount_default)
+            estimated_amount = st.number_input("Cantidad estimada", min_value=1, step=1, value=estimated_amount_default)
         details = st.text_area("Comentarios", value=details_default)
         submitted = st.form_submit_button("Enviar solicitud")
         if submitted:
@@ -195,12 +195,12 @@ def display_pending_requests_table(requests_data):
                     color=["blue", "green", "red"]
                 ),
                 "created_at": st.column_config.DateColumn(
-                    "Creado en",
-                    format="distance"
+                    "Fecha de creación",
+                    format="DD/MM/YY HH:mm"
                 ),
                 "updated_at": st.column_config.DateColumn(
-                    "Actualizado en",
-                    format="distance"
+                    "Última modificación",
+                    format="DD/MM/YY HH:mm"
                 )
             }
         )
@@ -257,12 +257,12 @@ def display_all_requests_table(requests_data):
                 ),
                 "admin_note": "Nota del administrador",
                 "created_at": st.column_config.DateColumn(
-                    "Creado en",
-                    format="distance"
+                    "Fecha de creación",
+                    format="DD/MM/YY HH:mm"
                 ),
                 "updated_at": st.column_config.DateColumn(
-                    "Actualizado en",
-                    format="distance"
+                    "Última modificación",
+                    format="DD/MM/YY HH:mm"
                 )
             }
         )

@@ -7,6 +7,8 @@ import streamlit_authenticator as stauth
 import base64
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
+from typing import Literal
+from streamlit.components.v1 import html
 
 def protected_content():
     st.markdown(

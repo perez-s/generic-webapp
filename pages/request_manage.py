@@ -34,7 +34,7 @@ def get_providers():
 def display_pending_requests_table(requests_data):
     try:   
         rows = pd.DataFrame(requests_data)
-        rows = rows[["id","status", "request_category","measure_type","estimated_amount", "created_at", "updated_at"]]
+        rows = rows[["id","username","status", "request_category","measure_type","estimated_amount", "created_at", "updated_at"]]
         rows = rows[rows["status"] == "Pendiente"]
         rows["created_at"] = pd.to_datetime(rows["created_at"])
         rows["updated_at"] = pd.to_datetime(rows["updated_at"])
@@ -60,12 +60,12 @@ def display_pending_requests_table(requests_data):
                     color=["blue", "green", "red"]
                 ),
                 "created_at": st.column_config.DateColumn(
-                    "Creado en",
-                    format="distance"
+                    "Fecha de creación",
+                    format="DD/MM/YY HH:mm"
                 ),
                 "updated_at": st.column_config.DateColumn(
-                    "Actualizado en",
-                    format="distance"
+                    "Última modificación",
+                    format="DD/MM/YY HH:mm"
                 )
             }
         )
@@ -77,6 +77,7 @@ def display_pending_requests_table(requests_data):
                     default_options = select_request(displayed_table[displayed_table["Seleccionar"]].index.tolist()[0])
                     answer_request_form(
                         id=displayed_table[displayed_table["Seleccionar"]].index.tolist()[0],
+                        username=default_options["username"],
                         status=default_options["status"],
                         request_category_default=default_options["request_category"],
                         measure_type_default=default_options["measure_type"],
@@ -101,10 +102,11 @@ def get_enum_values(enum_name: str):
         print(f"Error fetching enum values: {e}")
 
 @st.dialog("Responder solicitud", width="large")
-def answer_request_form(id:int, status:str, request_category_default:list, measure_type_default: str, estimated_amount_default: int, details_default: str, admin_note_default: str, pickup_date_default: str, assigned_provider_default: str):
+def answer_request_form(id:int, username:str, status:str, request_category_default:list, measure_type_default: str, estimated_amount_default: int, details_default: str, admin_note_default: str, pickup_date_default: str, assigned_provider_default: str):
     now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
     request_form = st.form("request_form")
     with request_form:
+        st.write(f"### Responder solicitud ID: {id} del usuario: {username}")
         request_category = st.multiselect(
             "Categoria de los residuos",
             options=get_enum_values("residue_type"),
@@ -152,7 +154,7 @@ def update_request(request_id: int, request_status: str, pickup_date: str, provi
 def select_request(request_id: int):
     try:
         request = supabase.table("requests").select(
-            "status, request_category, measure_type, estimated_amount, details, admin_note, pickup_date, assigned_provider"
+            "username, status, request_category, measure_type, estimated_amount, details, admin_note, pickup_date, assigned_provider"
         ).eq("id", request_id).execute()
         return request.data[0] if request.data else None
     except Exception as e:
@@ -172,7 +174,7 @@ def list_all_requests(limit=200):
 def display_all_requests_table(requests_data):
     try:   
         rows = pd.DataFrame(requests_data)
-        rows = rows[["id","status", "request_category","measure_type","estimated_amount","assigned_provider","pickup_date","admin_note","created_at", "updated_at"]]
+        rows = rows[["id", "username","status", "request_category","measure_type","estimated_amount","assigned_provider","pickup_date","admin_note","created_at", "updated_at"]]
         rows["created_at"] = pd.to_datetime(rows["created_at"])
         rows["updated_at"] = pd.to_datetime(rows["updated_at"])
         rows["pickup_date"] = pd.to_datetime(rows["pickup_date"])
@@ -204,12 +206,12 @@ def display_all_requests_table(requests_data):
                 ),
                 "admin_note": "Nota del administrador",
                 "created_at": st.column_config.DateColumn(
-                    "Creado en",
-                    format="distance"
+                    "Fecha de creación",
+                    format="DD/MM/YY HH:mm"
                 ),
                 "updated_at": st.column_config.DateColumn(
-                    "Actualizado en",
-                    format="distance"
+                    "Última modificación",
+                    format="DD/MM/YY HH:mm"
                 )
             }
         )
@@ -221,6 +223,7 @@ def display_all_requests_table(requests_data):
                     default_options = select_request(displayed_table[displayed_table["Seleccionar"]].index.tolist()[0])
                     answer_request_form(
                         id=displayed_table[displayed_table["Seleccionar"]].index.tolist()[0],
+                        username=default_options["username"],
                         status=default_options["status"],
                         request_category_default=default_options["request_category"],
                         measure_type_default=default_options["measure_type"],

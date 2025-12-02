@@ -6,6 +6,7 @@ import time
 from yaml.loader import SafeLoader
 import streamlit_authenticator as stauth
 import modules.common as mc
+from streamlit_navigation_bar import st_navbar
 
 ### Page specific imports ###
 from supabase import create_client, Client
@@ -32,30 +33,39 @@ def delete_provider(provider_ids: list):
             provider = supabase.table("providers").select(
                 "lic_amb_path, rut_path, ccio_path, other_docs_path"
             ).eq("id", provider_id).execute()
-            
+
             if provider.data:
-                file_paths = [
-                    provider.data[0].get("lic_amb_path"),
-                    provider.data[0].get("rut_path"),
-                    provider.data[0].get("ccio_path"),
-                    provider.data[0].get("other_docs_path")
-                ]
-                
+                # Handle multiple files for lic_amb and other_docs (comma-separated)
+                lic_amb_paths = provider.data[0].get("lic_amb_path", "")
+                other_docs_paths = provider.data[0].get("other_docs_path", "")
+                rut_path = provider.data[0].get("rut_path", "")
+                ccio_path = provider.data[0].get("ccio_path", "")
+
+                file_paths = []
+                if lic_amb_paths:
+                    file_paths.extend([p.strip() for p in lic_amb_paths.split(",") if p.strip()])
+                if other_docs_paths:
+                    file_paths.extend([p.strip() for p in other_docs_paths.split(",") if p.strip()])
+                if rut_path:
+                    file_paths.append(rut_path.strip())
+                if ccio_path:
+                    file_paths.append(ccio_path.strip())
+
                 # Remove files from disk if they exist
                 for file_path in file_paths:
-                    if file_path and file_path.strip() and os.path.exists(file_path):
+                    if file_path and os.path.exists(file_path):
                         try:
                             os.remove(file_path)
                             deleted_files += 1
                         except Exception as file_err:
                             print(f"Warning: Could not delete file {file_path}: {file_err}")
-            
+
             # Delete provider from database
             supabase.table("providers").delete().eq("id", provider_id).execute()
-        
+
         st.toast(f"✅ {len(provider_ids)} proveedor(es) y {deleted_files} archivo(s) eliminados exitosamente")
         return True
-    
+
     except Exception as e:
         st.error(f"Error eliminando proveedor(es): {e}")
         return False
@@ -125,17 +135,28 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
         
         with col1:
             st.markdown("**Licencia ambiental**")
-            if lic_amb_path_default and os.path.exists(lic_amb_path_default):
-                with open(lic_amb_path_default, "rb") as file:
-                    st.download_button(
-                        label="⬇️ Descargar",
-                        data=file,
-                        file_name=os.path.basename(lic_amb_path_default),
-                        mime="application/octet-stream",
-                        key="download_lic_amb"
-                    )
+            if lic_amb_path_default:
+                # Handle comma-separated paths for multiple files
+                lic_amb_list = [p.strip() for p in lic_amb_path_default.split(",") if p.strip()]
+                if lic_amb_list:
+                    has_files = False
+                    for idx, doc_path in enumerate(lic_amb_list):
+                        if os.path.exists(doc_path):
+                            has_files = True
+                            with open(doc_path, "rb") as file:
+                                st.download_button(
+                                    label=f"⬇️ Descargar {os.path.basename(doc_path)}",
+                                    data=file,
+                                    file_name=os.path.basename(doc_path),
+                                    mime="application/octet-stream",
+                                    key=f"download_lic_amb_{idx}"
+                                )
+                    if not has_files:
+                        st.caption("No hay archivos actuales")
+                else:
+                    st.caption("No hay archivos actuales")
             else:
-                st.caption("No hay archivo actual")
+                st.caption("No hay archivos actuales")
             
             st.markdown("**RUT**")
             if rut_path_default and os.path.exists(rut_path_default):
@@ -169,8 +190,10 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
                 # Handle comma-separated paths for multiple files
                 other_docs_list = [p.strip() for p in other_docs_path_default.split(",") if p.strip()]
                 if other_docs_list:
+                    has_files = False
                     for idx, doc_path in enumerate(other_docs_list):
                         if os.path.exists(doc_path):
+                            has_files = True
                             with open(doc_path, "rb") as file:
                                 st.download_button(
                                     label=f"⬇️ Descargar {os.path.basename(doc_path)}",
@@ -179,6 +202,8 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
                                     mime="application/octet-stream",
                                     key=f"download_other_docs_{idx}"
                                 )
+                    if not has_files:
+                        st.caption("No hay archivos actuales")
                 else:
                     st.caption("No hay archivos actuales")
             else:
@@ -193,7 +218,7 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
             st.markdown(
                 """ 
                 - Actualiza la información del proveedor según sea necesario.
-                - Usa el expander de arriba para descargar los documentos actuales.
+                - Usa el desplegable de arriba para descargar los documentos actuales.
                 - Sube nuevos archivos si deseas reemplazar los existentes.
                 - Presiona el botón para actualizar el proveedor.
                 """
@@ -224,7 +249,7 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
         col1, col2 = st.columns(2)
         
         with col1:
-            lic_amb_file = st.file_uploader("Subir nueva Licencia ambiental", type=["pdf", "jpg", "png"], key="upload_lic_amb")
+            lic_amb_files = st.file_uploader("Subir nueva Licencia ambiental (múltiples permitidos)", type=["pdf", "jpg", "png"], accept_multiple_files=True, key="upload_lic_amb")
             rut_file = st.file_uploader("Subir nuevo RUT", type=["pdf", "jpg", "png"], key="upload_rut")
             
         with col2:
@@ -243,9 +268,22 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
             other_docs_path = other_docs_path_default
             
             # Update paths and save new files if uploaded
-            if lic_amb_file:
-                lic_amb_path = path_file(provider_nit, provider_name, "lic_amb", lic_amb_file)
-                save_file(lic_amb_file, lic_amb_path)
+            if lic_amb_files:
+                # Delete old lic_amb files from storage
+                if lic_amb_path_default:
+                    old_lic_list = [p.strip() for p in lic_amb_path_default.split(",") if p.strip()]
+                    for old_path in old_lic_list:
+                        if old_path and os.path.exists(old_path):
+                            try:
+                                os.remove(old_path)
+                            except Exception as del_err:
+                                print(f"Warning: Could not delete old file {old_path}: {del_err}")
+                
+                # Save new lic_amb files
+                lic_amb_paths = path_files_multiple(provider_nit, provider_name, "lic_amb", lic_amb_files)
+                lic_amb_path = ",".join(lic_amb_paths) if lic_amb_paths else ""
+                for file, path in zip(lic_amb_files, lic_amb_paths):
+                    save_file(file, path)
             
             if rut_file:
                 rut_path = path_file(provider_nit, provider_name, "rut", rut_file)
@@ -332,7 +370,7 @@ def create_provider(
 def list_all_providers(limit=200):
     try:
         providers = supabase.table("providers").select(
-            "id, username, provider_name, provider_category, lic_amb_path, rut_path, ccio_path, other_docs_path, created_at, updated_at"
+            "id, username, provider_name, provider_nit, provider_category, lic_amb_path, rut_path, ccio_path, other_docs_path, created_at, updated_at"
         ).order("id", desc=True).limit(limit).execute()
         return providers.data
     except Exception as e:
@@ -348,7 +386,8 @@ def format_date(date_str: str) -> str:
 
 def path_file(provider_nit, provider_name, file_name, upload_file) -> str:
     try:
-        return f"uploads/{provider_nit}_{provider_name}_{file_name}.{upload_file.type.split('/')[-1]}"
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        return f"uploads/{provider_nit}_{provider_name}_{file_name}_{timestamp}.{upload_file.type.split('/')[-1]}"
     except Exception as e:
         st.error(f"Error generando ruta de archivo: {e}")
 
@@ -356,9 +395,10 @@ def path_files_multiple(provider_nit, provider_name, file_name_prefix, upload_fi
     """Generate paths for multiple files."""
     try:
         paths = []
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         for idx, upload_file in enumerate(upload_files):
             ext = upload_file.type.split('/')[-1]
-            path = f"uploads/{provider_nit}_{provider_name}_{file_name_prefix}_{idx+1}.{ext}"
+            path = f"uploads/{provider_nit}_{provider_name}_{file_name_prefix}_{timestamp}_{idx+1}.{ext}"
             paths.append(path)
         return paths
     except Exception as e:
@@ -412,7 +452,7 @@ def create_provider_dialog():
         st.divider()
         col1, col2 = st.columns(2)
         with col1:
-            lic_amb_file = st.file_uploader("Licencia ambiental", type=["pdf", "jpg", "png"])
+            lic_amb_files = st.file_uploader("Licencia ambiental (múltiples archivos permitidos)", type=["pdf", "jpg", "png"], accept_multiple_files=True)
             rut_file = st.file_uploader("RUT", type=["pdf", "jpg", "png"])
         with col2:
             ccio_file = st.file_uploader("Cámara de comercio", type=["pdf", "jpg", "png"])
@@ -422,7 +462,7 @@ def create_provider_dialog():
             username = "user1"
             # Validate required file uploads
             missing = []
-            if not lic_amb_file:
+            if not lic_amb_files:
                 missing.append("Licencia ambiental")
             if not rut_file:
                 missing.append("RUT")
@@ -434,7 +474,8 @@ def create_provider_dialog():
                 return
 
             # Build file paths safely
-            lic_amb_path = path_file(provider_nit, provider_name, "lic_amb", lic_amb_file)
+            lic_amb_paths = path_files_multiple(provider_nit, provider_name, "lic_amb", lic_amb_files)
+            lic_amb_path = ",".join(lic_amb_paths) if lic_amb_paths else ""
             rut_path = path_file(provider_nit, provider_name, "rut", rut_file)
             ccio_path = path_file(provider_nit, provider_name, "ccio", ccio_file)
             
@@ -463,7 +504,11 @@ def create_provider_dialog():
                 
                 # Only save files if database insertion succeeded
                 if result:
-                    save_file(lic_amb_file, lic_amb_path)
+                    # Save multiple lic_amb files
+                    if lic_amb_files and lic_amb_paths:
+                        for file, path in zip(lic_amb_files, lic_amb_paths):
+                            save_file(file, path)
+                    
                     save_file(rut_file, rut_path)
                     save_file(ccio_file, ccio_path)
 
@@ -489,22 +534,142 @@ def display_providers_table(providers_data):
                 "id": "ID del proveedor",
                 "provider_name": "Nombre del proveedor",
                 "created_at": st.column_config.DateColumn(
-                    "Creado en",
-                    format="distance"
+                    "Fecha de creación",
+                    format="DD/MM/YY HH:mm"
                 ),
                 "updated_at": st.column_config.DateColumn(
-                    "Actualizado en",
-                    format="distance"
+                    "Última modificación",
+                    format="DD/MM/YY HH:mm"
                 )
             }
         )
     except Exception as e:
         st.write(f"No hay datos disponibles") 
 
+@st.dialog("📋 Detalle del proveedor", width="large")
+def provider_detail_view(provider_id: int):
+    """Display detailed view of a provider with all information and downloadable files."""
+    try:
+        provider = select_provider(provider_id)
+        if not provider:
+            st.error("No se pudo cargar la información del proveedor")
+            return
+        
+        # Provider information and services section
+        with st.expander("ℹ️ Información general y servicios", expanded=True):
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown(f"**Nombre:** {provider.get('provider_name', 'N/A')}")
+                st.markdown(f"**NIT:** {provider.get('provider_nit', 'N/A')}")
+                st.markdown(f"**Email:** {provider.get('provider_email', 'N/A')}")
+            
+            with col2:
+                st.markdown(f"**Contacto:** {provider.get('provider_contact', 'N/A')}")
+                st.markdown(f"**Teléfono:** {provider.get('provider_contact_phone', 'N/A')}")
+                        
+            with col1:
+                categories = provider.get('provider_category', [])
+                if categories:
+                    # Color mapping to match dataframe
+                    color_map = ["blue", "green", "orange", "red", "violet", "orange", "gray"]
+                    badges = " ".join([f":{color_map[idx % len(color_map)]}-badge[{cat}]" for idx, cat in enumerate(categories)])
+                    st.markdown(f"**Tipos de residuos:** {badges}")
+                else:
+                    st.markdown("**Tipos de residuos:** No especificado")
+            
+            with col2:
+                activities = provider.get('provider_activity', [])
+                if activities:
+                    st.markdown("**Actividades autorizadas:** " + ", ".join(activities))
+                else:
+                    st.markdown("**Actividades autorizadas:** No especificado")
+        
+        # Documents section with inline PDF viewers
+        with st.expander("📄 Documentos soporte", expanded=False):
+            # Licencia ambiental
+            st.markdown("**Licencia ambiental**")
+            lic_amb_path = provider.get('lic_amb_path', '')
+            if lic_amb_path:
+                lic_amb_list = [p.strip() for p in lic_amb_path.split(",") if p.strip()]
+                if lic_amb_list:
+                    has_files = False
+                    for idx, doc_path in enumerate(lic_amb_list):
+                        if os.path.exists(doc_path):
+                            has_files = True
+                            with st.expander(f"📄 Ver Licencia ambiental {idx+1}"):
+                                try:
+                                    with open(doc_path, "rb") as pdf_file:
+                                        pdf_data = pdf_file.read()
+                                        st.pdf(pdf_data, key=f"view_lic_amb_pdf_{idx}")
+                                except Exception as e:
+                                    st.error(f"Error cargando PDF: {e}")
+                    if not has_files:
+                        st.caption("No hay archivos disponibles")
+                else:
+                    st.caption("No hay archivos disponibles")
+            else:
+                st.caption("No hay archivos disponibles")
+            
+            # RUT
+            st.markdown("**RUT**")
+            rut_path = provider.get('rut_path', '')
+            if rut_path and os.path.exists(rut_path):
+                with st.expander("📄 Ver RUT"):
+                    try:
+                        with open(rut_path, "rb") as pdf_file:
+                            pdf_data = pdf_file.read()
+                            st.pdf(pdf_data, key="view_rut_pdf")
+                    except Exception as e:
+                        st.error(f"Error cargando PDF: {e}")
+            else:
+                st.caption("No hay archivo disponible")
+            
+            # Cámara de comercio
+            st.markdown("**Cámara de comercio**")
+            ccio_path = provider.get('ccio_path', '')
+            if ccio_path and os.path.exists(ccio_path):
+                with st.expander("📄 Ver Cámara de comercio"):
+                    try:
+                        with open(ccio_path, "rb") as pdf_file:
+                            pdf_data = pdf_file.read()
+                            st.pdf(pdf_data, key="view_ccio_pdf")
+                    except Exception as e:
+                        st.error(f"Error cargando PDF: {e}")
+            else:
+                st.caption("No hay archivo disponible")
+            
+            # Otros documentos
+            st.markdown("**Otros documentos**")
+            other_docs_path = provider.get('other_docs_path', '')
+            if other_docs_path:
+                other_docs_list = [p.strip() for p in other_docs_path.split(",") if p.strip()]
+                if other_docs_list:
+                    has_files = False
+                    for idx, doc_path in enumerate(other_docs_list):
+                        if os.path.exists(doc_path):
+                            has_files = True
+                            with st.expander(f"📄 Ver Documento {idx+1}"):
+                                try:
+                                    with open(doc_path, "rb") as pdf_file:
+                                        pdf_data = pdf_file.read()
+                                        st.pdf(pdf_data, key=f"view_other_docs_pdf_{idx}")
+                                except Exception as e:
+                                    st.error(f"Error cargando PDF: {e}")
+                    if not has_files:
+                        st.caption("No hay archivos disponibles")
+                else:
+                    st.caption("No hay archivos disponibles")
+            else:
+                st.caption("No hay archivos disponibles")
+    
+    except Exception as e:
+        st.error(f"Error cargando detalles del proveedor: {e}")
+
 def display_all_providers_table(providers_data):
     try:
         rows = pd.DataFrame(providers_data)
-        rows = rows[["id", "provider_name","provider_category", "created_at", "updated_at"]]
+        rows = rows[["id", "provider_name", "provider_nit", "provider_category", "created_at", "updated_at"]]
         rows["created_at"] = pd.to_datetime(rows["created_at"])
         rows["updated_at"] = pd.to_datetime(rows["updated_at"])
         rows.set_index("id", inplace=True)
@@ -512,33 +677,40 @@ def display_all_providers_table(providers_data):
         displayed_table = st.data_editor(
             rows,
             width="stretch",
-            disabled=["id","provider_name", "provider_category", "created_at", "updated_at"],
+            disabled=["id","provider_name", "provider_nit", "provider_category", "created_at", "updated_at"],
             column_config={
                 "id": "ID",
                 "provider_name": "Nombre del proveedor",
+                "provider_nit": "NIT del proveedor",
                 "provider_category": st.column_config.MultiselectColumn(
                     "Categorías de residuos",
                     options=get_enum_values("residue_type"),
                     color=["blue", "green", "orange", "red", "purple", "brown", "gray"]
                 ),
                 "created_at": st.column_config.DateColumn(
-                    "Creado en",
-                    format="distance"
+                    "Fecha de creación",
+                    format="DD/MM/YY HH:mm"
                 ),
                 "updated_at": st.column_config.DateColumn(
-                    "Actualizado en",
-                    format="distance"
+                    "Última modificación",
+                    format="DD/MM/YY HH:mm"
                 )
             }
         )
         selected_count = displayed_table.Seleccionar.sum()
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         if selected_count > 0 and selected_count < 2:
-            with col1:    
-                if st.button("🔁 Editar solicitud", width="stretch"):
-                    default_options = select_provider(displayed_table[displayed_table["Seleccionar"]].index.tolist()[0])
+            selected_id = displayed_table[displayed_table["Seleccionar"]].index.tolist()[0]
+            
+            with col1:
+                if st.button("👁️ Consultar", width="stretch"):
+                    provider_detail_view(selected_id)
+            
+            with col2:    
+                if st.button("🔁 Editar proveedor", width="stretch"):
+                    default_options = select_provider(selected_id)
                     update_provider_form(
-                        id=displayed_table[displayed_table["Seleccionar"]].index.tolist()[0],
+                        id=selected_id,
                         provider_name_default=default_options["provider_name"],
                         provider_nit_default=default_options["provider_nit"],
                         provider_email_default=default_options["provider_email"],
@@ -552,12 +724,21 @@ def display_all_providers_table(providers_data):
                         other_docs_path_default=default_options["other_docs_path"]
                     )
         if selected_count > 0 or selected_count >= 2:
-            with col2:
-                if st.button("🗑️ Eliminar solicitudes", width="stretch"):
+            with col3:
+                if st.button("🗑️ Eliminar proveedor/es", width="stretch"):
                     confirm_delete_dialog(displayed_table[displayed_table["Seleccionar"]].index.tolist())   
     except Exception as e:
         st.write(f"No hay proveedores disponibles aun")
 
+@st.dialog("PDF Viewer", width="large")
+def pdf_viewer_dialog(pdf_path: str):
+    """Dialog to display a PDF file."""
+    try:
+        with open(pdf_path, "rb") as pdf_file:
+            PDFbyte = pdf_file.read()
+            st.pdf(PDFbyte)
+    except Exception as e:
+        st.error(f"Error loading PDF: {e}")
 
 ### Page layout and logic ###
 mc.protected_content()
@@ -567,18 +748,19 @@ if 'authentication_status' not in ss:
 
 ### Main page code ###
 if ss["authentication_status"]:
-    
+
     st.page_link("./pages/nav4.py", label="⬅️ Atrás", use_container_width=True)
     mc.logout_and_home()
 
+    st.divider()
+
     ### Formulario de solicitud de servicio ###
-    st.subheader("📋 Proveedores")
+    st.subheader("📋 Gestión de proveedores")
+
 
     create_provider_button()
 
     st.divider()
-
-    st.subheader("📋 Gestión de proveedores")
 
     display_all_providers_table(list_all_providers(200))
 
