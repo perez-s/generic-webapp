@@ -243,7 +243,7 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
 def select_provider(provider_id: int):
     try:
         provider = supabase.table("providers").select(
-            "provider_name, provider_nit, provider_email, provider_contact, provider_contact_phone, provider_website, provider_category, provider_activity, lic_amb_path, rut_path, ccio_path, other_docs_path, certificado_bancario_path"
+            "provider_name, provider_nit, provider_email, provider_contact, provider_contact_phone, provider_website, provider_category, provider_activity, lic_amb_path, rut_path, ccio_path, other_docs_path, certificado_bancario_path, provider_website"
         ).eq("id", provider_id).execute()
         return provider.data[0] if provider.data else None
     except Exception as e:
@@ -690,7 +690,8 @@ def display_all_providers_table(providers_data):
                         lic_amb_path_default=default_options["lic_amb_path"],
                         rut_path_default=default_options["rut_path"],
                         ccio_path_default=default_options["ccio_path"],
-                        other_docs_path_default=default_options["other_docs_path"]
+                        other_docs_path_default=default_options["other_docs_path"],
+                        provider_website_default=default_options["provider_website"]
                     )
         if selected_count > 0 or selected_count >= 2:
             with col3:
