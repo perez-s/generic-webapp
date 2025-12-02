@@ -193,20 +193,18 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
             
             # Update paths and save new files if uploaded
             if lic_amb_files:
-                # Delete old lic_amb files from storage
-                if lic_amb_path_default:
-                    old_lic_list = [p.strip() for p in lic_amb_path_default.split(",") if p.strip()]
-                    for old_path in old_lic_list:
-                        if old_path and os.path.exists(old_path):
-                            try:
-                                os.remove(old_path)
-                            except Exception as del_err:
-                                print(f"Warning: Could not delete old file {old_path}: {del_err}")
+                # Save new lic_amb files and append to existing paths
+                new_lic_amb_paths = path_files_multiple(provider_nit, provider_name, "lic_amb", lic_amb_files)
                 
-                # Save new lic_amb files
-                lic_amb_paths = path_files_multiple(provider_nit, provider_name, "lic_amb", lic_amb_files)
-                lic_amb_path = ",".join(lic_amb_paths) if lic_amb_paths else ""
-                for file, path in zip(lic_amb_files, lic_amb_paths):
+                # Append to existing paths instead of replacing
+                if lic_amb_path_default:
+                    existing_paths = [p.strip() for p in lic_amb_path_default.split(",") if p.strip()]
+                    all_paths = existing_paths + new_lic_amb_paths
+                else:
+                    all_paths = new_lic_amb_paths
+                
+                lic_amb_path = ",".join(all_paths) if all_paths else ""
+                for file, path in zip(lic_amb_files, new_lic_amb_paths):
                     save_file(file, path)
             
             if rut_file:
@@ -219,20 +217,18 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
             
             # Handle multiple other_docs files
             if other_docs_files:
-                # Delete old other_docs files from storage
-                if other_docs_path_default:
-                    old_docs_list = [p.strip() for p in other_docs_path_default.split(",") if p.strip()]
-                    for old_path in old_docs_list:
-                        if old_path and os.path.exists(old_path):
-                            try:
-                                os.remove(old_path)
-                            except Exception as del_err:
-                                print(f"Warning: Could not delete old file {old_path}: {del_err}")
+                # Save new other_docs files and append to existing paths
+                new_other_docs_paths = path_files_multiple(provider_nit, provider_name, "other_docs", other_docs_files)
                 
-                # Save new other_docs files
-                other_docs_paths = path_files_multiple(provider_nit, provider_name, "other_docs", other_docs_files)
-                other_docs_path = ",".join(other_docs_paths) if other_docs_paths else ""
-                for file, path in zip(other_docs_files, other_docs_paths):
+                # Append to existing paths instead of replacing
+                if other_docs_path_default:
+                    existing_paths = [p.strip() for p in other_docs_path_default.split(",") if p.strip()]
+                    all_paths = existing_paths + new_other_docs_paths
+                else:
+                    all_paths = new_other_docs_paths
+                
+                other_docs_path = ",".join(all_paths) if all_paths else ""
+                for file, path in zip(other_docs_files, new_other_docs_paths):
                     save_file(file, path)
 
             if certificado_bancario_file:
