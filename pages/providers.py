@@ -31,7 +31,7 @@ def delete_provider(provider_ids: list):
         for provider_id in provider_ids:
             # Fetch file paths to delete files from disk
             provider = supabase.table("providers").select(
-                "lic_amb_path, rut_path, ccio_path, other_docs_path"
+                "lic_amb_path, rut_path, ccio_path, other_docs_path, certificado_bancario_path"
             ).eq("id", provider_id).execute()
 
             if provider.data:
@@ -40,6 +40,7 @@ def delete_provider(provider_ids: list):
                 other_docs_paths = provider.data[0].get("other_docs_path", "")
                 rut_path = provider.data[0].get("rut_path", "")
                 ccio_path = provider.data[0].get("ccio_path", "")
+                certificado_bancario_path = provider.data[0].get("certificado_bancario_path", "")
 
                 file_paths = []
                 if lic_amb_paths:
@@ -50,6 +51,8 @@ def delete_provider(provider_ids: list):
                     file_paths.append(rut_path.strip())
                 if ccio_path:
                     file_paths.append(ccio_path.strip())
+                if certificado_bancario_path:
+                    file_paths.append(certificado_bancario_path.strip())
 
                 # Remove files from disk if they exist
                 for file_path in file_paths:
@@ -102,6 +105,7 @@ def update_provider(
         rut_path: str, 
         ccio_path: str, 
         other_docs_path: str,
+        certificado_bancario_path: str,
         updated_at: str
     ):
     try:
@@ -117,6 +121,7 @@ def update_provider(
             "rut_path": rut_path,
             "ccio_path": ccio_path,
             "other_docs_path": other_docs_path,
+            "certificado_bancario_path": certificado_bancario_path,
             "updated_at": updated_at
         }).eq("id", provider_id).execute()
         st.toast("✅ Proveedor actualizado exitosamente")
@@ -127,89 +132,113 @@ def update_provider(
         st.error(f"Error actualizando proveedor: {e}")
 
 @st.dialog("Actualizar proveedor", width="large")
-def update_provider_form(id: int,provider_name_default: str, provider_nit_default: int, provider_email_default: str, provider_contact_default: str, provider_contact_phone_default: int, provider_category_default: list, provider_activity_default: list, lic_amb_path_default: str, rut_path_default: str, ccio_path_default: str, other_docs_path_default: str):
+def update_provider_form(id: int,provider_name_default: str, provider_nit_default: int, provider_email_default: str, provider_contact_default: str, provider_contact_phone_default: int, provider_category_default: list, provider_activity_default: list, lic_amb_path_default: str, rut_path_default: str, ccio_path_default: str, other_docs_path_default: str, certificado_bancario_path_default: str = ""):
     
     # Download section (outside form)
-    with st.expander("📥 Descargar documentos actuales", expanded=False):
-        col1, col2 = st.columns(2)
+    # with st.expander("📥 Descargar documentos actuales", expanded=False):
+    #     col1, col2 = st.columns(2)
         
-        with col1:
-            st.markdown("**Licencia ambiental**")
-            if lic_amb_path_default:
-                # Handle comma-separated paths for multiple files
-                lic_amb_list = [p.strip() for p in lic_amb_path_default.split(",") if p.strip()]
-                if lic_amb_list:
-                    has_files = False
-                    for idx, doc_path in enumerate(lic_amb_list):
-                        if os.path.exists(doc_path):
-                            has_files = True
-                            with open(doc_path, "rb") as file:
-                                st.download_button(
-                                    label=f"⬇️ Descargar {os.path.basename(doc_path)}",
-                                    data=file,
-                                    file_name=os.path.basename(doc_path),
-                                    mime="application/octet-stream",
-                                    key=f"download_lic_amb_{idx}"
-                                )
-                    if not has_files:
-                        st.caption("No hay archivos actuales")
-                else:
-                    st.caption("No hay archivos actuales")
-            else:
-                st.caption("No hay archivos actuales")
+    #     with col1:
+    #         st.markdown("**Licencia ambiental**")
+    #         if lic_amb_path_default:
+    #             # Handle comma-separated paths for multiple files
+    #             lic_amb_list = [p.strip() for p in lic_amb_path_default.split(",") if p.strip()]
+    #             if lic_amb_list:
+    #                 has_files = False
+    #                 for idx, doc_path in enumerate(lic_amb_list):
+    #                     if os.path.exists(doc_path):
+    #                         has_files = True
+    #                         with open(doc_path, "rb") as file:
+    #                             filename = os.path.basename(doc_path)
+    #                             # Extract timestamp from filename (format: provider_nit_provider_name_lic_amb_YYYYMMDDHHMMSS_idx.ext)
+    #                             parts = filename.rsplit('_', 2)
+    #                             if len(parts) >= 2:
+    #                                 timestamp_str = parts[-2]
+    #                                 try:
+    #                                     dt = datetime.strptime(timestamp_str, "%Y%m%d%H%M%S")
+    #                                     date_label = dt.strftime("%Y-%m-%d %H:%M")
+    #                                 except:
+    #                                     date_label = filename
+    #                             else:
+    #                                 date_label = filename
+                                
+    #                             st.download_button(
+    #                                 label=f"⬇️ Descargar licencia ambiental {idx+1} ({date_label})",
+    #                                 data=file,
+    #                                 file_name=os.path.basename(doc_path),
+    #                                 mime="application/octet-stream",
+    #                                 key=f"download_lic_amb_{idx}"
+    #                             )
+    #                 if not has_files:
+    #                     st.caption("No hay archivos actuales")
+    #             else:
+    #                 st.caption("No hay archivos actuales")
+    #         else:
+    #             st.caption("No hay archivos actuales")
             
-            st.markdown("**RUT**")
-            if rut_path_default and os.path.exists(rut_path_default):
-                with open(rut_path_default, "rb") as file:
-                    st.download_button(
-                        label="⬇️ Descargar",
-                        data=file,
-                        file_name=os.path.basename(rut_path_default),
-                        mime="application/octet-stream",
-                        key="download_rut"
-                    )
-            else:
-                st.caption("No hay archivo actual")
+    #         st.markdown("**RUT**")
+    #         if rut_path_default and os.path.exists(rut_path_default):
+    #             with open(rut_path_default, "rb") as file:
+    #                 st.download_button(
+    #                     label="⬇️ Descargar",
+    #                     data=file,
+    #                     file_name=os.path.basename(rut_path_default),
+    #                     mime="application/octet-stream",
+    #                     key="download_rut"
+    #                 )
+    #         else:
+    #             st.caption("No hay archivo actual")
             
-        with col2:
-            st.markdown("**Cámara de comercio**")
-            if ccio_path_default and os.path.exists(ccio_path_default):
-                with open(ccio_path_default, "rb") as file:
-                    st.download_button(
-                        label="⬇️ Descargar",
-                        data=file,
-                        file_name=os.path.basename(ccio_path_default),
-                        mime="application/octet-stream",
-                        key="download_ccio"
-                    )
-            else:
-                st.caption("No hay archivo actual")
+    #     with col2:
+    #         st.markdown("**Cámara de comercio**")
+    #         if ccio_path_default and os.path.exists(ccio_path_default):
+    #             with open(ccio_path_default, "rb") as file:
+    #                 st.download_button(
+    #                     label="⬇️ Descargar",
+    #                     data=file,
+    #                     file_name=os.path.basename(ccio_path_default),
+    #                     mime="application/octet-stream",
+    #                     key="download_ccio"
+    #                 )
+    #         else:
+    #             st.caption("No hay archivo actual")
             
-            st.markdown("**Otros documentos**")
-            if other_docs_path_default:
-                # Handle comma-separated paths for multiple files
-                other_docs_list = [p.strip() for p in other_docs_path_default.split(",") if p.strip()]
-                if other_docs_list:
-                    has_files = False
-                    for idx, doc_path in enumerate(other_docs_list):
-                        if os.path.exists(doc_path):
-                            has_files = True
-                            with open(doc_path, "rb") as file:
-                                st.download_button(
-                                    label=f"⬇️ Descargar {os.path.basename(doc_path)}",
-                                    data=file,
-                                    file_name=os.path.basename(doc_path),
-                                    mime="application/octet-stream",
-                                    key=f"download_other_docs_{idx}"
-                                )
-                    if not has_files:
-                        st.caption("No hay archivos actuales")
-                else:
-                    st.caption("No hay archivos actuales")
-            else:
-                st.caption("No hay archivos actuales")
+    #         st.markdown("**Otros documentos**")
+    #         if other_docs_path_default:
+    #             # Handle comma-separated paths for multiple files
+    #             other_docs_list = [p.strip() for p in other_docs_path_default.split(",") if p.strip()]
+    #             if other_docs_list:
+    #                 has_files = False
+    #                 for idx, doc_path in enumerate(other_docs_list):
+    #                     if os.path.exists(doc_path):
+    #                         has_files = True
+    #                         with open(doc_path, "rb") as file:
+    #                             filename = os.path.basename(doc_path)
+    #                             parts = filename.rsplit('_', 2)
+    #                             if len(parts) >= 2:
+    #                                 timestamp_str = parts[-2]
+    #                                 try:
+    #                                     dt = datetime.strptime(timestamp_str, "%Y%m%d%H%M%S")
+    #                                     date_label = dt.strftime("%Y-%m-%d %H:%M")
+    #                                 except:
+    #                                     date_label = filename
+    #                             else:
+    #                                 date_label = filename
+    #                             st.download_button(
+    #                                 label=f"⬇️ Descargar otros documentos {idx+1} ({date_label})",
+    #                                 data=file,
+    #                                 file_name=os.path.basename(doc_path),
+    #                                 mime="application/octet-stream",
+    #                                 key=f"download_other_docs_{idx}"
+    #                             )
+    #                 if not has_files:
+    #                     st.caption("No hay archivos actuales")
+    #             else:
+    #                 st.caption("No hay archivos actuales")
+    #         else:
+    #             st.caption("No hay archivos actuales")
     
-    st.divider()
+    # st.divider()
     
     # Form section
     update_form = st.form("update_provider_form")
@@ -255,6 +284,7 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
         with col2:
             ccio_file = st.file_uploader("Subir nueva Cámara de comercio", type=["pdf", "jpg", "png"], key="upload_ccio")
             other_docs_files = st.file_uploader("Subir nuevos Otros documentos (múltiples permitidos)", type=["pdf", "jpg", "png"], accept_multiple_files=True, key="upload_other_docs")
+            certificado_bancario_file = st.file_uploader("Subir nuevo Certificado bancario (opcional)", type=["pdf", "jpg", "png"], key="upload_certificado_bancario")
         
         st.divider()
         submitted = st.form_submit_button("Actualizar proveedor")
@@ -266,6 +296,7 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
             rut_path = rut_path_default
             ccio_path = ccio_path_default
             other_docs_path = other_docs_path_default
+            certificado_bancario_path = certificado_bancario_path_default
             
             # Update paths and save new files if uploaded
             if lic_amb_files:
@@ -310,13 +341,17 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
                 other_docs_path = ",".join(other_docs_paths) if other_docs_paths else ""
                 for file, path in zip(other_docs_files, other_docs_paths):
                     save_file(file, path)
+
+            if certificado_bancario_file:
+                certificado_bancario_path = path_file(provider_nit, provider_name, "certificado_bancario", certificado_bancario_file)
+                save_file(certificado_bancario_file, certificado_bancario_path)
             
-            update_provider(id, provider_name, provider_nit, provider_email, provider_contact, provider_contact_phone, provider_category, provider_auth_activities, lic_amb_path, rut_path, ccio_path, other_docs_path, now)     
+            update_provider(id, provider_name, provider_nit, provider_email, provider_contact, provider_contact_phone, provider_category, provider_auth_activities, lic_amb_path, rut_path, ccio_path, other_docs_path, certificado_bancario_path, now)     
 
 def select_provider(provider_id: int):
     try:
         provider = supabase.table("providers").select(
-            "provider_name, provider_nit, provider_email, provider_contact, provider_contact_phone, provider_category, provider_activity, lic_amb_path, rut_path, ccio_path, other_docs_path"
+            "provider_name, provider_nit, provider_email, provider_contact, provider_contact_phone, provider_category, provider_activity, lic_amb_path, rut_path, ccio_path, other_docs_path, certificado_bancario_path"
         ).eq("id", provider_id).execute()
         return provider.data[0] if provider.data else None
     except Exception as e:
@@ -341,7 +376,8 @@ def create_provider(
         lic_amb_path: str, 
         rut_path: str, 
         ccio_path: str, 
-        other_docs_path: str
+    other_docs_path: str,
+    certificado_bancario_path: str
     ):
     now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
     print(now)
@@ -359,6 +395,7 @@ def create_provider(
             "rut_path": rut_path,
             "ccio_path": ccio_path,
             "other_docs_path": other_docs_path,
+            "certificado_bancario_path": certificado_bancario_path,
             "created_at": now,
             "updated_at": now
         }).execute()
@@ -370,7 +407,7 @@ def create_provider(
 def list_all_providers(limit=200):
     try:
         providers = supabase.table("providers").select(
-            "id, username, provider_name, provider_nit, provider_category, lic_amb_path, rut_path, ccio_path, other_docs_path, created_at, updated_at"
+            "id, username, provider_name, provider_nit, provider_category, lic_amb_path, rut_path, ccio_path, other_docs_path, certificado_bancario_path, created_at, updated_at"
         ).order("id", desc=True).limit(limit).execute()
         return providers.data
     except Exception as e:
@@ -456,7 +493,8 @@ def create_provider_dialog():
             rut_file = st.file_uploader("RUT", type=["pdf", "jpg", "png"])
         with col2:
             ccio_file = st.file_uploader("Cámara de comercio", type=["pdf", "jpg", "png"])
-            other_docs_files = st.file_uploader("Otros documentos (múltiples archivos permitidos)", type=["pdf", "jpg", "png"], accept_multiple_files=True)    
+            other_docs_files = st.file_uploader("Otros documentos (múltiples archivos permitidos)", type=["pdf", "jpg", "png"], accept_multiple_files=True)
+            certificado_bancario_file = st.file_uploader("Certificado bancario (opcional)", type=["pdf", "jpg", "png"])    
         submitted = st.form_submit_button("Enviar solicitud")
         if submitted:
             username = "user1"
@@ -484,6 +522,9 @@ def create_provider_dialog():
             if other_docs_files:
                 other_docs_paths = path_files_multiple(provider_nit, provider_name, "other_docs", other_docs_files)
             other_docs_path = ",".join(other_docs_paths) if other_docs_paths else ""
+            certificado_bancario_path = ""
+            if certificado_bancario_file:
+                certificado_bancario_path = path_file(provider_nit, provider_name, "certificado_bancario", certificado_bancario_file)
 
             # Persist provider record
             try:
@@ -500,6 +541,7 @@ def create_provider_dialog():
                     rut_path,
                     ccio_path,
                     other_docs_path,
+                    certificado_bancario_path,
                 )
                 
                 # Only save files if database insertion succeeded
@@ -516,6 +558,10 @@ def create_provider_dialog():
                     if other_docs_files and other_docs_paths:
                         for file, path in zip(other_docs_files, other_docs_paths):
                             save_file(file, path)
+
+                    # Save certificado bancario if provided
+                    if certificado_bancario_file:
+                        save_file(certificado_bancario_file, certificado_bancario_path)
 
                     st.toast("✅ Proveedor creado exitosamente! ")
                     time.sleep(2)
@@ -639,6 +685,20 @@ def provider_detail_view(provider_id: int):
             else:
                 st.caption("No hay archivo disponible")
             
+            # Certificado bancario
+            st.markdown("**Certificado bancario**")
+            certificado_bancario_path = provider.get('certificado_bancario_path', '')
+            if certificado_bancario_path and os.path.exists(certificado_bancario_path):
+                with st.expander("📄 Ver Certificado bancario"):
+                    try:
+                        with open(certificado_bancario_path, "rb") as pdf_file:
+                            pdf_data = pdf_file.read()
+                            st.pdf(pdf_data, key="view_certificado_bancario_pdf")
+                    except Exception as e:
+                        st.error(f"Error cargando PDF: {e}")
+            else:
+                st.caption("No hay archivo disponible")
+
             # Otros documentos
             st.markdown("**Otros documentos**")
             other_docs_path = provider.get('other_docs_path', '')
