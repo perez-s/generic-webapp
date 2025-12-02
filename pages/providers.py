@@ -243,7 +243,7 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
 def select_provider(provider_id: int):
     try:
         provider = supabase.table("providers").select(
-            "provider_name, provider_nit, provider_email, provider_contact, provider_contact_phone, provider_website, provider_category, provider_activity, lic_amb_path, rut_path, ccio_path, other_docs_path, certificado_bancario_path, provider_website"
+            "provider_name, provider_nit, provider_email, provider_contact, provider_contact_phone, provider_website, provider_category, provider_activity, lic_amb_path, rut_path, ccio_path, other_docs_path, certificado_bancario_path, provider_website, updated_at"
         ).eq("id", provider_id).execute()
         return provider.data[0] if provider.data else None
     except Exception as e:
@@ -503,6 +503,20 @@ def provider_detail_view(provider_id: int):
             
             with col1:
                 st.markdown(f"**Nombre:** {provider.get('provider_name', 'N/A')}")
+                # Estado segun año de actualización
+                updated_at = provider.get('updated_at')
+                status_label = None
+                if updated_at:
+                    try:
+                        dt = datetime.fromisoformat(updated_at.replace('Z', '+00:00'))
+                        status_label = "Actualizado" if dt.year == datetime.now().year else "Vencido"
+                    except Exception:
+                        status_label = None
+                if status_label:
+                    color = "green" if status_label == "Actualizado" else "red"
+                    st.markdown(f"**Estado:** :{color}-badge[{status_label}]")
+                else:
+                    st.markdown("**Estado:** No disponible")
                 st.markdown(f"**NIT:** {provider.get('provider_nit', 'N/A')}")
                 st.markdown(f"**Email:** {provider.get('provider_email', 'N/A')}")
             
@@ -514,7 +528,8 @@ def provider_detail_view(provider_id: int):
                     st.markdown(f"**Sitio web:** [{website}]({website})")
                 else:
                     st.markdown("**Sitio web:** No especificado")
-                        
+
+                    
             with col1:
                 categories = provider.get('provider_category', [])
                 if categories:
