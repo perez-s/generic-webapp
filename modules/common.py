@@ -23,14 +23,25 @@ def protected_content():
     )
   
 def logout_and_home():
+    st.markdown("""
+        <style>
+            .block-container {
+                    padding-top: 0.2rem;
+                    padding-bottom: 0rem;
+                    padding-left: 5rem;
+                    padding-right: 5rem;
+                }
+        </style>
+        """, unsafe_allow_html=True)
     authenticator = stauth.Authenticate('config.yaml')
-    columns = st.columns(6)
+    columns = st.columns([1,1,1,1,1,1,2])
     with columns[0]:
-        st.page_link("./pages/login_home.py", label="🏠 Inicio", use_container_width=True)
+        st.page_link("./pages/nav4.py", label="⬅️ Atrás", width="stretch")
+        st.page_link("./pages/login_home.py", label="🏠 Inicio", width="stretch")
         authenticator.logout(button_name='Cerrar sesión', location='main', use_container_width=True, key='logoutformats')
-    with columns[5]:
-        st.image("./resources/Logo2.png", width=10, use_container_width=True)
-    st.set_page_config(page_title="Bienvenido a WeroApp", layout="wide")
+    with columns[6]:
+        st.image("./resources/Logo2.png", width="stretch")
+
     st.divider()
 
 def format_date(date_str: str) -> str:

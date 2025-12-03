@@ -95,7 +95,7 @@ def logout():
     with columns[0]:
         authenticator.logout(button_name='Cerrar sesión', location='main', use_container_width=True, key='logoutformats')
     with columns[5]:
-        st.image("./resources/Logo2.png", width=10, use_container_width=True)
+        st.image("./resources/Logo2.png", width="content")
     st.set_page_config(page_title="Bienvenido a WeroApp", layout="wide")
 
 st.set_page_config(page_title="Bienvenido a WeroApp", layout="centered")

@@ -32,7 +32,7 @@ def get_providers():
         return []
 
 def display_pending_requests_table(requests_data):
-    try:   
+    try:
         rows = pd.DataFrame(requests_data)
         rows = rows[["id","username","status", "request_category","measure_type","estimated_amount", "created_at", "updated_at"]]
         rows = rows[rows["status"] == "Pendiente"]
@@ -41,12 +41,20 @@ def display_pending_requests_table(requests_data):
         rows.set_index("id", inplace=True)
         rows["Seleccionar"] = False
 
+        if not rows.any().any():
+            st.info("No hay solicitudes pendientes aun. 📭")
+            return
+
         displayed_table = st.data_editor(
             rows,
             width="stretch",
-            disabled=["id","status", "request_category", "measure_type", "estimated_amount", "created_at", "updated_at"], 
+            disabled=["id","username","status", "request_category", "measure_type", "estimated_amount", "created_at", "updated_at"], 
             column_config={
                 "id": "ID",
+                "Seleccionar": st.column_config.CheckboxColumn(
+                    "Seleccionar",
+                    pinned=True
+                ),
                 "request_category": st.column_config.MultiselectColumn(
                     "Categorías de residuos",
                     options=get_enum_values("residue_type"),
@@ -70,25 +78,65 @@ def display_pending_requests_table(requests_data):
             }
         )
         selected_count = displayed_table.Seleccionar.sum()
-        col1, col2 = st.columns(2)
-        if selected_count > 0 and selected_count < 2:
-            with col1:    
-                if st.button("🔁 Responder solicitud", width="stretch"):
-                    default_options = select_request(displayed_table[displayed_table["Seleccionar"]].index.tolist()[0])
-                    answer_request_form(
-                        id=displayed_table[displayed_table["Seleccionar"]].index.tolist()[0],
-                        username=default_options["username"],
-                        status=default_options["status"],
-                        request_category_default=default_options["request_category"],
-                        measure_type_default=default_options["measure_type"],
-                        estimated_amount_default=default_options["estimated_amount"],
-                        details_default=default_options["details"],
-                        admin_note_default=default_options["admin_note"]
-                    )
-        if selected_count >= 2:
-            with col1:
-                if st.button("🔁 Editar solicitud", width="stretch"):
-                    st.toast("❌ Selecciona solo una solicitud para editar")
+        if selected_count > 0:
+            if st.button("🗓️ Agendar solicitud", width="stretch"):
+                schedule_request_form(
+                    ids=displayed_table[displayed_table["Seleccionar"]].index.tolist()
+                )
+    except Exception as e:
+            st.write(f"No hay solicitudes pendientes disponibles") 
+
+def display_all_requests_table(requests_data):
+    try:   
+        rows = pd.DataFrame(requests_data)
+        rows = rows[["id","username","status", "request_category","measure_type","estimated_amount", "created_at", "updated_at"]]
+        rows["created_at"] = pd.to_datetime(rows["created_at"])
+        rows["updated_at"] = pd.to_datetime(rows["updated_at"])
+        rows.set_index("id", inplace=True)
+        rows["Seleccionar"] = False
+
+        if not rows.any().any():
+            st.info("No hay solicitudes disponibles aun. 📭")
+            return
+
+        displayed_table = st.data_editor(
+            rows,
+            width="stretch",
+            disabled=["id","username","status", "request_category", "measure_type", "estimated_amount", "created_at", "updated_at"], 
+            column_config={
+                "id": "ID",
+                "Seleccionar": st.column_config.CheckboxColumn(
+                    "Seleccionar",
+                    pinned=True
+                ),
+                "request_category": st.column_config.MultiselectColumn(
+                    "Categorías de residuos",
+                    options=get_enum_values("residue_type"),
+                    color=["blue", "green", "orange", "red", "purple", "brown", "gray"]
+                ),
+                "measure_type": "Tipo de unidad",
+                "estimated_amount": "Cantidad estimada",
+                "status": st.column_config.MultiselectColumn(
+                    "Estado",
+                    options=get_enum_values("status_type"),
+                    color=["blue", "green", "red"]
+                ),
+                "created_at": st.column_config.DateColumn(
+                    "Fecha de creación",
+                    format="DD/MM/YY HH:mm"
+                ),
+                "updated_at": st.column_config.DateColumn(
+                    "Última modificación",
+                    format="DD/MM/YY HH:mm"
+                )
+            }
+        )
+        selected_count = displayed_table.Seleccionar.sum()
+        if selected_count > 0:
+            if st.button("🗓️ Agendar solicitud", width="stretch"):
+                schedule_request_form(
+                    ids=displayed_table[displayed_table["Seleccionar"]].index.tolist()
+                )
     except Exception as e:
             st.write(f"No hay solicitudes pendientes disponibles") 
 
@@ -99,40 +147,68 @@ def get_enum_values(enum_name: str):
     except Exception as e:
         print(f"Error fetching enum values: {e}")
 
-@st.dialog("Responder solicitud", width="large")
-def answer_request_form(id:int, username:str, status:str, request_category_default:list, measure_type_default: str, estimated_amount_default: int, details_default: str, admin_note_default: str):
-    now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
+@st.dialog("Programar solicitudes", width="large")
+def schedule_request_form(ids: list):
+    providers = get_providers()
     request_form = st.form("request_form")
     with request_form:
-        st.write(f"### Responder solicitud ID: {id} del usuario: {username}")
-        request_category = st.multiselect(
-            "Categoria de los residuos",
-            options=get_enum_values("residue_type"),
-            default=request_category_default,
-            disabled=True
-        )
-        col1,col2 = st.columns(2)
-        with col1:
-            measure_type = st.radio("Tipo de unidades", options=["m3", "kg"], index=["m3", "kg"].index(measure_type_default), disabled=True)
-        with col2:
-            estimated_amount = st.number_input("Cantidad estimada", min_value=1, max_value=100, step=1, value=estimated_amount_default, disabled=True)
-        details = st.text_area("Comentarios", value=details_default, disabled=True)
-        st.divider()
-        request_status = st.selectbox("Estado de la solicitud", options=get_enum_values("status_type"), index=get_enum_values("status_type").index(status), disabled=False)
-        admin_note = st.text_area("Nota para el usuario (opcional)", value=admin_note_default)
-        submitted = st.form_submit_button("Responder solicitud")
-        if submitted:
-            update_request(id, request_status, admin_note)         
+        cols = st.columns([1,2])
+        with cols[0]:
+            st.write(f"### Programación de recolección")
+            pickup_date = st.date_input("Fecha de recolección")
+            provider_name = st.selectbox("Proveedor asignado", options=providers)
+            admin_note = st.text_area("Nota del administrador (opcional)")
+            submitted = st.form_submit_button("Programar solicitud")
+        with cols[1]:
+            st.write("### Solicitudes seleccionadas:")
+            df = pd.DataFrame(list_all_requests())
+            df = df[df["id"].isin(ids)]
+            df.set_index("id", inplace=True)
+            st.dataframe(
+                df[["username", "request_category", "measure_type", "estimated_amount"]],
+                width="stretch",
+                column_config={
+                    "username": "Usuario",
+                    "request_category": st.column_config.MultiselectColumn(
+                        "Categorías de residuos",
+                        options=get_enum_values("residue_type"),
+                        color=["blue", "green", "orange", "red", "purple", "brown", "gray"]
+                    ),
+                    "measure_type": "Unidades",
+                    "estimated_amount": "Cantidad estimada"
+                }
+                )
 
-def update_request(request_id: int, request_status: str, admin_note: str):
+        if submitted:
+            if admin_note == "":
+                admin_note = None
+            request = create_pickup(
+                username="user1",
+                provider_name=provider_name,
+                pickup_date=pickup_date.isoformat(),
+                admin_note=admin_note
+            )
+            create_pickup_requests(
+                request_ids=ids,
+                pickup_id=request.data[0]["id"]
+            )
+            update_request_status(
+                request_ids=ids,
+                request_status="Programada",
+                admin_note=admin_note
+            )
+
+            st.toast("✅ Solicitudes programadas exitosamente")
+            st.rerun()
+
+def update_request_status(request_ids: list, request_status: str, admin_note: str = None):
     now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
-    print(now)
     try:
         request = supabase.table("requests").update({
             "status": request_status,
             "admin_note": admin_note,
             "updated_at": now
-        }).eq("id", request_id).execute()
+        }).in_("id", request_ids).execute()
         st.toast("✅ Solicitud actualizada exitosamente")
         st.rerun()
         return request
@@ -160,34 +236,70 @@ def list_all_requests(limit=200):
         st.error(f"Error fetching requests: {e}")
         return []
 
-def display_all_requests_table(requests_data):
-    try:   
-        rows = pd.DataFrame(requests_data)
-        rows = rows[["id", "username","status", "request_category","measure_type","estimated_amount","admin_note","created_at", "updated_at"]]
+def create_pickup(username: str, provider_name: str, pickup_date: str, admin_note: str = None):
+    now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
+    try:
+        request = supabase.table("pickup").insert({
+            "username": username,
+            "provider_name": provider_name,
+            "pickup_date": pickup_date,
+            "admin_note": admin_note,
+            "created_at": now,
+            "updated_at": now
+        }).execute()
+        return request
+    except Exception as e:
+        st.error(f"Error creating pickup request: {e}")
+
+def create_pickup_requests(request_ids: list, pickup_id: int):
+    try:
+        for request_id in request_ids:
+            supabase.table("pickup_requests").insert({
+                "request_id": request_id,
+                "pickup_id": pickup_id
+            }).execute()
+    except Exception as e:
+        st.error(f"Error creating pickup requests: {e}")
+
+def display_schedule_pickup_table(pickup_data):
+    try:
+        if not pickup_data:
+            st.info("📭 No hay recolecciones programadas aún. Programa una desde la pestaña de solicitudes pendientes.")
+            return
+
+        rows = pd.DataFrame(pickup_data)
+        rows = rows[["id","pickup_status", "pickup_date", "provider_name", "created_at", "updated_at"]]
         rows["created_at"] = pd.to_datetime(rows["created_at"])
         rows["updated_at"] = pd.to_datetime(rows["updated_at"])
+        rows = rows[rows["pickup_status"] == "Programada"]
         rows.set_index("id", inplace=True)
         rows["Seleccionar"] = False
+        rows["request_ids"] = rows.index.map(lambda x: ", ".join(str(req["request_id"]) for req in select_pickup_requests(x)) if select_pickup_requests(x) else "N/A")
+
+        if not rows.any().any():
+            st.info("📭 No hay recolecciones programadas aún. Programa una desde la pestaña de solicitudes pendientes.")
+            return
 
         displayed_table = st.data_editor(
             rows,
             width="stretch",
-            disabled=["id","status", "request_category","measure_type","estimated_amount","admin_note","created_at", "updated_at"], 
+            disabled=["id","pickup_status", "pickup_date", "provider_name", "created_at", "updated_at", "request_ids"], 
             column_config={
                 "id": "ID",
-                "request_category": st.column_config.MultiselectColumn(
-                    "Categorías de residuos",
-                    options=get_enum_values("residue_type"),
-                    color=["blue", "green", "orange", "red", "purple", "brown", "gray"]
+                "Seleccionar": st.column_config.CheckboxColumn(
+                    "Seleccionar",
+                    pinned=True
                 ),
-                "measure_type": "Tipo de unidad",
-                "estimated_amount": "Cantidad estimada",
-                "status": st.column_config.MultiselectColumn(
+                "pickup_date": "Fecha de recolección",
+                "provider_name": "Proveedor asignado",
+                "request_ids": st.column_config.ListColumn(
+                    "IDs de solicitudes asociadas"
+                ),
+                "pickup_status": st.column_config.MultiselectColumn(
                     "Estado",
                     options=get_enum_values("status_type"),
-                    color=["blue", "green", "red"]
+                    color=["blue", "yellow", "red", "green"]
                 ),
-                "admin_note": "Nota del administrador",
                 "created_at": st.column_config.DateColumn(
                     "Fecha de creación",
                     format="DD/MM/YY HH:mm"
@@ -198,32 +310,166 @@ def display_all_requests_table(requests_data):
                 )
             }
         )
-        selected_count = displayed_table.Seleccionar.sum()
-        col1, col2 = st.columns(2)
-        if selected_count > 0 and selected_count < 2:
-            with col1:    
-                if st.button("🔁 Responder solicitud", width="stretch"):
-                    default_options = select_request(displayed_table[displayed_table["Seleccionar"]].index.tolist()[0])
-                    answer_request_form(
-                        id=displayed_table[displayed_table["Seleccionar"]].index.tolist()[0],
-                        username=default_options["username"],
-                        status=default_options["status"],
-                        request_category_default=default_options["request_category"],
-                        measure_type_default=default_options["measure_type"],
-                        estimated_amount_default=default_options["estimated_amount"],
-                        details_default=default_options["details"],
-                        admin_note_default=default_options["admin_note"]
-                    )
-        if selected_count >= 2:
-            with col1:
-                if st.button("🔁 Editar solicitud", width="stretch"):
-                    st.toast("❌ Selecciona solo una solicitud para editar")
-    except Exception as e:
-            st.write(f"No hay solicitudes pendientes disponibles {e}") 
 
+        selected_count = displayed_table.Seleccionar.sum()
+        cols = st.columns(2)
+        if selected_count > 0:
+            if cols[1].button("❌ Cancelar", width="stretch"):
+                cancel_pickup_form(
+                    pickup_ids=displayed_table[displayed_table["Seleccionar"]].index.tolist()
+                )
+        if selected_count > 0 and selected_count < 2:
+            if cols[0].button("🔁 Editar", width="stretch"):
+                update_pickup_form(
+                    pickup_id=displayed_table[displayed_table["Seleccionar"]].index.tolist()[0]
+                )
+
+
+    except Exception as e:
+            st.error("❌ Error al cargar las recolecciones programadas.")
+
+def display_all_pickup_table(pickup_data):
+    try:   
+        rows = pd.DataFrame(pickup_data)
+        rows = rows[["id","pickup_status", "pickup_date", "provider_name", "created_at", "updated_at"]]
+        rows["created_at"] = pd.to_datetime(rows["created_at"])
+        rows["updated_at"] = pd.to_datetime(rows["updated_at"])
+        rows.set_index("id", inplace=True)
+        rows["Seleccionar"] = False
+        rows["request_ids"] = rows.index.map(lambda x: ", ".join(str(req["request_id"]) for req in select_pickup_requests(x)) if select_pickup_requests(x) else "N/A")
+
+        displayed_table = st.data_editor(
+            rows,
+            key="all_pickups_table",
+            width="stretch",
+            disabled=["id","pickup_status", "pickup_date", "provider_name", "created_at", "updated_at", "request_ids"], 
+            column_config={
+                "id": "ID",
+                "Seleccionar": st.column_config.CheckboxColumn(
+                    "Seleccionar",
+                    pinned=True
+                ),
+                "pickup_date": "Fecha de recolección",
+                "provider_name": "Proveedor asignado",
+                "request_ids": st.column_config.ListColumn(
+                    "IDs de solicitudes asociadas"
+                ),
+                "pickup_status": st.column_config.MultiselectColumn(
+                    "Estado",
+                    options=get_enum_values("status_type"),
+                    color=["blue", "yellow", "red", "green"]
+                ),
+                "created_at": st.column_config.DateColumn(
+                    "Fecha de creación",
+                    format="DD/MM/YY HH:mm"
+                ),
+                "updated_at": st.column_config.DateColumn(
+                    "Última modificación",
+                    format="DD/MM/YY HH:mm"
+                )
+            }
+        )
+
+    except Exception as e:
+            st.info("📭 No hay recolecciones disponibles aún. Programa una desde la pestaña de solicitudes pendientes.")
+
+def list_all_pickups(limit=200):
+    try:
+        pickups = supabase.table("pickup").select("*").order("id", desc=True).limit(limit).execute()
+        return pickups.data
+    except Exception as e:
+        st.error(f"Error fetching pickups: {e}")
+
+def select_pickup_requests(pickup_id: int):
+    try:
+        pickup_requests = supabase.table("pickup_requests").select(
+            "request_id"
+        ).eq("pickup_id", pickup_id).execute()
+        return pickup_requests.data if pickup_requests.data else None
+    except Exception as e:
+        st.error(f"Error fetching pickup requests: {e}")
+        return []
+
+def cancel_pickups(pickup_ids: list, admin_note: str = None):
+    now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
+    try:
+        ### Update pickup status to "Cancelada"
+        pickup = supabase.table("pickup").update({
+            "pickup_status": "Cancelada",
+            "admin_note": admin_note,
+            "updated_at": now
+        }).in_("id", pickup_ids).execute()
+
+        ### Update associated requests status to "Pendiente"
+        for pickup_id in pickup_ids:
+            associated_requests = select_pickup_requests(pickup_id)
+            if associated_requests:
+                request_ids = [req["request_id"] for req in associated_requests]
+                update_request_status(
+                    request_ids=request_ids,
+                    request_status="Pendiente",
+                    admin_note=admin_note
+                )
+        
+        st.toast("✅ Recolección cancelada exitosamente")
+        return pickup
+
+    except Exception as e:
+        st.error(f"Error canceling pickup: {e}")
+    st.rerun()    
+
+@st.dialog("Cancelar recolección", width="small")
+def cancel_pickup_form(pickup_ids: list):
+    st.write("### Confirmar cancelación de recolección")
+    st.markdown("¿Estás seguro de que deseas cancelar las recolecciones seleccionadas? Esta acción actualizará el estado de las solicitudes asociadas a :blue-badge[Pendiente].")
+    admin_note = st.text_input("Nota del administrador (opcional)")
+    cols = st.columns(2)
+    if cols[1].button("❌ Cancelar recolección", width="stretch"):
+        cancel_pickups(
+            pickup_ids=pickup_ids,
+            admin_note=admin_note
+        )
+        st.toast("✅ Recolección cancelada exitosamente")
+        st.rerun()
+    if cols[0].button("⬅️ Volver", width="stretch"):
+        st.close_dialog()
+
+@st.dialog("Editar recolección", width="medium")
+def update_pickup_form(pickup_id: int):
+    with st.form("update_pickup_form"):
+        st.write(f"### Editar recolección ID: {pickup_id}")
+        pickup_date = st.date_input("Fecha de recolección")
+        provider_name = st.selectbox("Proveedor asignado", options=get_providers())
+        admin_note = st.text_area("Nota del administrador (opcional)")
+        submitted = st.form_submit_button("Actualizar recolección")
+        if submitted:
+            update_pickup(
+                pickup_id=pickup_id,
+                pickup_date=pickup_date.isoformat(),
+                provider_name=provider_name,
+                admin_note=admin_note
+            )
+
+def update_pickup(pickup_id: int, pickup_date: str, provider_name: str, admin_note: str = None):
+    now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
+    try:
+        pickup = supabase.table("pickup").update({
+            "pickup_date": pickup_date,
+            "provider_name": provider_name,
+            "admin_note": admin_note,
+            "updated_at": now
+        }).eq("id", pickup_id).execute()
+        st.toast("✅ Recolección actualizada exitosamente")
+        st.rerun()
+        return pickup
+
+    except Exception as e:
+        st.error(f"Error updating pickup: {e}")
 
 if 'authentication_status' not in ss:
     st.switch_page('./pages/login_home.py')
+
+
 
 ### Main page code ###
 if ss["authentication_status"]:
@@ -231,14 +477,20 @@ if ss["authentication_status"]:
     ### Navigation template ###
 
     ### Formulario de solicitud de servicio ###
-    st.page_link("./pages/nav4.py", label="⬅️ Atrás", use_container_width=True)
     mc.logout_and_home()
 
-    tabs = st.tabs(["📄 Solicitudes pendientes", "📊 Todas las solicitudes"])
-    with tabs[0]:
-        display_pending_requests_table(list_all_requests())
-    with tabs[1]:
-        display_all_requests_table(list_all_requests())
-
+    with st.container(border=True, height="stretch", width="stretch", horizontal_alignment="center"):
+        st.write("##### Gestión de solicitudes")
+        tabs = st.tabs(["📄 Solicitudes pendientes", "📊 Todas las solicitudes"])
+        with tabs[0]:
+            display_pending_requests_table(list_all_requests())
+        with tabs[1]:
+            display_all_requests_table(list_all_requests())
+        st.write("##### Gestión de recolecciones")
+        tabs = st.tabs(["🗑️ Recolecciones programadas", "📊 Todas las recolecciones"])
+        with tabs[0]:
+            display_schedule_pickup_table(list_all_pickups())
+        with tabs[1]:
+            display_all_pickup_table(list_all_pickups())
 else:
     st.switch_page("./pages/login_home.py")

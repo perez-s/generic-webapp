@@ -104,7 +104,6 @@ def get_enum_values(enum_name: str):
 
 def create_request(username: str, request_category:list, measure_type: str, estimated_amount: int,details: str):
     now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
-    print(now)
     try:
         request = supabase.table("requests").insert({
             "username": username,
@@ -292,7 +291,6 @@ if ss["authentication_status"]:
     ### Navigation template ###
 
     ### Formulario de solicitud de servicio ###
-    st.page_link("./pages/nav4.py", label="⬅️ Atrás", use_container_width=True)
     mc.logout_and_home()
 
     st.subheader("📋 Solicitud de servicio")
