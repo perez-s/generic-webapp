@@ -24,7 +24,7 @@ credentials:
       logged_in: true
       name: Wero Caracol
       password: $2b$12$LNs921eIyRPTrxEchDYbnuA/FernrU4NHNFrhMaRMZTs3HJGQzHmq
-      role: administrador
+      role: wero
     wero2:
       email: wero@gmail.com
       failed_login_attempts: 0

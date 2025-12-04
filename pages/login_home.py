@@ -7,7 +7,7 @@ import streamlit_authenticator as stauth
 import base64
 from pathlib import Path
 from modules.common import protected_content
-from streamlit_tile import streamlit_tile
+from modules.nav import MenuButtons
 
 
 authenticator = stauth.Authenticate('config.yaml')
@@ -23,7 +23,9 @@ def get_roles():
         cred = {}
 
     return {username: user_info['role'] for username, user_info in cred['usernames'].items() if 'role' in user_info}
+
 protected_content()
+
 def set_bg_hack(main_bg):
     '''
     A function to unpack an image from root folder and set as bg.
@@ -107,46 +109,10 @@ authenticator.login(location='main', fields={'Form name':'Iniciar sesión', 'Use
 st.write("Pista: usuario 'wero-caracol' y contraseña 'wero-caracol123' para acceder como administrador.")
 
 if ss["authentication_status"]:
+
     logout()
-    col1, col2, col3 = st.columns([1, 1, 1])
-    
-    with col1:
-        agua = streamlit_tile(
-            label="Agua",
-            title="Agua",
-            description="Monitorea y gestiona el consumo de agua",
-            icon="💧",
-            color_theme="blue",
-            height="200px",
-            width="200px",
-            key="demo_tile"
-        )
-    with col2:
-        energia = streamlit_tile(
-            label="Energía",
-            title="Energía",
-            description="Controla y optimiza el uso de energía",
-            icon="⚡",
-            color_theme="blue",
-            height="200px",
-            width="200px",
-            key="demo_tile2"
-        )
-    with col3:
-        residuos = streamlit_tile(
-            label="Residuos solidos",
-            title="Residuos solidos",
-            description="Gestiona la recolección y el reciclaje de residuos sólidos",
-            icon="🗑️",
-            color_theme="blue",
-            height="200px",
-            width="200px",
-            key="demo_tile3"
-        )
-    if residuos:
-        st.info("🗑️ Residuos clicked!")
-        st.switch_page('pages/nav3.py')
-    st.space("large")
+    MenuButtons('home', get_roles())
+
 if ss["authentication_status"] is False:
     st.toast('Usuario/contraseña incorrecta', icon="🚫")
     set_bg_hack('./resources/homepage1.jpg')

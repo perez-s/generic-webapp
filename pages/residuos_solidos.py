@@ -65,6 +65,6 @@ if ss["authentication_status"]:
         )
     if residuos_peligrosos:
         st.info("clicked!")
-        st.switch_page("./pages/nav4.py")
+        st.switch_page("./pages/residuos_peligrosos.py")
 else:
     st.switch_page("./pages/login_home.py")

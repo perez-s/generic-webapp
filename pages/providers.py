@@ -734,7 +734,7 @@ if 'authentication_status' not in ss:
 ### Main page code ###
 if ss["authentication_status"]:
 
-    st.page_link("./pages/nav4.py", label="⬅️ Atrás", use_container_width=True)
+    st.page_link("./pages/residuos_peligrosos.py", label="⬅️ Atrás", use_container_width=True)
     mc.logout_and_home()
     
     ### Formulario de solicitud de servicio ###
