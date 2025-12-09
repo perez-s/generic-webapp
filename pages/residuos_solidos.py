@@ -53,7 +53,7 @@ if ss["authentication_status"]:
             key="demo_tile3"
         )
     with col1:
-        RCD = streamlit_tile(
+        RCDs = streamlit_tile(
             label="RCD",
             title="RCD",
             description="Gestiona la recolección y el reciclaje de residuos de construcción y demolición",
@@ -65,5 +65,11 @@ if ss["authentication_status"]:
         )
     if residuos_peligrosos:
         st.switch_page("./pages/residuos_peligrosos.py")
+    if residuos_ordinarios:
+        st.toast("Funcionalidad en desarrollo", icon="⚠️")
+    if madera:
+        st.toast("Funcionalidad en desarrollo", icon="⚠️")
+    if RCDs:
+        st.toast("Funcionalidad en desarrollo", icon="⚠️")
 else:
     st.switch_page("./pages/login_home.py")

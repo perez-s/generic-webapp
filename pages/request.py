@@ -47,13 +47,13 @@ def update_request_form(id:int, request_category_default:list, measure_type_defa
         with col1:
             measure_type = st.radio("Tipo de unidades", options=["m3", "kg"], index=["m3", "kg"].index(measure_type_default))
         with col2:
-            estimated_amount = st.number_input("Cantidad estimada", min_value=1, step=1, value=estimated_amount_default)
+            estimated_amount = st.number_input("Cantidad estimada", min_value=0.1, step=0.1, value=estimated_amount_default)
         details = st.text_area("Comentarios", value=details_default)
         submitted = st.form_submit_button("Enviar solicitud")
         if submitted:
             update_request(id, request_category, measure_type, estimated_amount, details)           
 
-def update_request(request_id: int, request_category:list, measure_type: str, estimated_amount: int,details: str):
+def update_request(request_id: int, request_category:list, measure_type: str, estimated_amount: float,details: str):
     now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
     print(now)
     try:
@@ -108,7 +108,7 @@ def get_enum_values(enum_name: str):
     except Exception as e:
         print(f"Error fetching enum values: {e.message}")
 
-def create_request(username: str, request_category:list, measure_type: str, estimated_amount: int,details: str):
+def create_request(username: str, request_category:list, measure_type: str, estimated_amount: float,details: str):
     now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
     try:
         request = supabase.table("requests").insert({
@@ -135,8 +135,7 @@ def list_all_requests(limit=200):
         ).order("id", desc=True).limit(limit).execute()
         return requests.data
     except Exception as e:
-        st.toast(f"❌ Error al obtener las solicitudes: {e.message}")
- 
+        st.toast(f"❌ Error al obtener las solicitudes: {e.message}") 
 
 @st.dialog("Crear solicitud", width="medium")
 def create_request_form():
@@ -160,7 +159,7 @@ def create_request_form():
         with col1:
             measure_type = st.radio("Tipo de unidades", options=["m3", "kg"])
         with col2:
-            estimated_amount = st.number_input("Cantidad estimada", min_value=1, step=1)
+            estimated_amount = st.number_input("Cantidad estimada", min_value=0.1, step=0.1)
         details = st.text_area("Comentarios")
         submitted = st.form_submit_button("Enviar solicitud")
         if submitted:
@@ -231,6 +230,7 @@ def display_pending_requests_table(requests_data, username):
            
     except Exception as e:
         st.info(f"📭 No hay solicitudes disponibles")
+
 def display_all_requests_table(requests_data, username):
     try:
         rows = pd.DataFrame(requests_data)
