@@ -16,7 +16,7 @@ if 'authentication_status' not in ss:
 
 if ss["authentication_status"]:
     st.set_page_config(page_title="Bienvenido a WeroApp", layout="wide")
-    mc.logout_and_home()
+    mc.logout_and_home('./pages/home.py')
     col1, col2, col3 = st.columns([1, 1, 1])
 
     with col1:

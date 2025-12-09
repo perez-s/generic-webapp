@@ -17,9 +17,9 @@ if 'authentication_status' not in ss:
 
 if ss["authentication_status"]:
 
-    mc.logout_and_home('./pages/residuos_solidos.py')
+    mc.logout_and_home()
 
-    MenuButtons(location='residuos', user_roles=mc.get_roles())
+    MenuButtons(location='home', user_roles=mc.get_roles())
 
 else:
-    st.switch_page("./pages/login_home.py")
+    st.switch_page("./pages/login_home.py") 

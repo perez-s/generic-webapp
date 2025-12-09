@@ -734,7 +734,7 @@ if 'authentication_status' not in ss:
 if ss["authentication_status"]:
 
     st.page_link("./pages/residuos_peligrosos.py", label="⬅️ Atrás", use_container_width=True)
-    mc.logout_and_home()
+    mc.logout_and_home('./pages/residuos_peligrosos.py')
     
     ### Formulario de solicitud de servicio ###
     st.subheader("📋 Gestión de proveedores")

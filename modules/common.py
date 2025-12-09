@@ -22,7 +22,8 @@ def protected_content():
         unsafe_allow_html=True
     )
   
-def logout_and_home():
+def logout_and_home(previous_page: str = None):
+    st.set_page_config(page_title="Aplicación de Gestión", page_icon="./resources/Logo2.png", layout="wide")
     st.markdown("""
         <style>
             .block-container {
@@ -36,7 +37,8 @@ def logout_and_home():
     authenticator = stauth.Authenticate('config.yaml')
     columns = st.columns([1,1,2,1,1,1,2])
     with columns[0]:
-        st.page_link("./pages/residuos_peligrosos.py", label="⬅️ Atrás", width="stretch")
+        if previous_page:
+            st.page_link(previous_page, label="⬅️ Atrás", width="stretch")
         st.page_link("./pages/login_home.py", label="🏠 Inicio", width="stretch")
         authenticator.logout(button_name='Cerrar sesión', location='main', use_container_width=True, key='logoutformats')
     with columns[2]:

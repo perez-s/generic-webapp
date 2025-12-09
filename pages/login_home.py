@@ -108,9 +108,7 @@ if 'authapp' not in ss:
 authenticator.login(location='main', fields={'Form name':'Iniciar sesión', 'Username':'Usuario', 'Password':'Contraseña', 'Login':'Ingresar', 'Captcha':'Captcha'}, key='loginhome1')
 
 if ss["authentication_status"]:
-
-    logout()
-    MenuButtons('home', get_roles())
+    st.switch_page("./pages/home.py")
 
 if ss["authentication_status"] is False:
     st.toast('Usuario/contraseña incorrecta', icon="🚫")

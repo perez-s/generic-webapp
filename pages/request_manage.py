@@ -469,7 +469,7 @@ if ss["authentication_status"]:
     ### Navigation template ###
 
     ### Formulario de solicitud de servicio ###
-    mc.logout_and_home()
+    mc.logout_and_home('./pages/residuos_peligrosos.py')
 
     with st.container(border=True, height="stretch", width="stretch", horizontal_alignment="center"):
         st.write("##### Gestión de solicitudes")

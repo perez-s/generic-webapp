@@ -302,7 +302,7 @@ if ss["authentication_status"]:
     ### Navigation template ###
 
     ### Formulario de solicitud de servicio ###
-    mc.logout_and_home()
+    mc.logout_and_home('./pages/residuos_peligrosos.py')
 
     st.subheader("📋 Solicitud de servicio")
 

@@ -13,7 +13,7 @@ def energia_tile():
         color_theme="blue",
         height="200px",
         width="200px",
-        key="demo_tile2"
+        key="energia_tile"
     )
     if energia:
         st.toast("🚧 Funcionalidad en desarrollo...")
@@ -27,7 +27,7 @@ def agua_tile():
         color_theme="blue",
         height="200px",
         width="200px",
-        key="demo_tile"
+        key="agua_tile"
     )
     if agua:
         st.toast("🚧 Funcionalidad en desarrollo...")
@@ -41,7 +41,7 @@ def residuos_tile():
         color_theme="blue",
         height="200px",
         width="200px",
-        key="demo_tile3"
+        key="residuos_tile"
     )
     if residuos:
         st.switch_page('pages/residuos_solidos.py')
@@ -55,7 +55,7 @@ def providers_tile():
         color_theme="blue",
         height="200px",
         width="200px",
-        key="demo_tile"
+        key="providers_tile"
     )
     if providers:
         st.switch_page("./pages/providers.py")
@@ -69,7 +69,7 @@ def requests_tile():
         color_theme="blue",
         height="200px",
         width="200px",
-        key="demo_tile2"
+        key="requests_tile"
     )
     if requests:
         st.switch_page("./pages/request.py")
@@ -83,21 +83,34 @@ def requests_manage_tile():
         color_theme="blue",
         height="200px",
         width="200px",
-        key="demo_tile3"
+        key="requests_manage_tile"
     )
     if requests_manage:
         st.switch_page("./pages/request_manage.py")
 
+def mail_test_tile():
+    mail_test = streamlit_tile(
+        label="Test Email",
+        title="Test Email",
+        description="Envía un correo electrónico de prueba",
+        icon="📧",
+        color_theme="blue",
+        height="200px",
+        width="200px",
+        key="mail_test_tile"
+    )
+    if mail_test:
+        st.switch_page("./pages/mail_test.py")
+
 def render_tiles(tiles_to_render: list):
     counter = 0
     cols = st.columns([1,1,1])
-    for tile in tiles_to_render:
-        if counter > 2:
-            counter = 0
+    for i in range(len(tiles_to_render)):
         with cols[counter]:
-            tiles_to_render[counter]()
+            tiles_to_render[i]()
             counter += 1
-
+            if counter > 2:
+                counter = 0
 
 
 def MenuButtons(location: Literal['residuos', 'home'], user_roles=None):
@@ -137,7 +150,7 @@ def MenuButtons(location: Literal['residuos', 'home'], user_roles=None):
         
         elif location == 'residuos':
             if ss.username in caracol:
-                caracol_tiles = [providers_tile, requests_manage_tile]
+                caracol_tiles = [providers_tile, requests_tile, requests_manage_tile]
                 render_tiles(caracol_tiles)
 
             if ss.username in caracol_users:
@@ -145,6 +158,6 @@ def MenuButtons(location: Literal['residuos', 'home'], user_roles=None):
                 render_tiles(caracol_user_tiles)
 
             if ss.username in wero:
-                wero_tiles = [providers_tile, requests_tile, requests_manage_tile]
+                wero_tiles = [providers_tile, requests_tile, requests_manage_tile, mail_test_tile]
                 render_tiles(wero_tiles)
         # (2) users with user and admin roles have access to page 2.     
