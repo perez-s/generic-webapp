@@ -98,6 +98,8 @@ def render_tiles(tiles_to_render: list):
             tiles_to_render[counter]()
             counter += 1
 
+
+
 def MenuButtons(location: Literal['residuos', 'home'], user_roles=None):
 
     if user_roles is None:
@@ -125,7 +127,8 @@ def MenuButtons(location: Literal['residuos', 'home'], user_roles=None):
                 render_tiles(caracol_tiles)
 
             if ss.username in caracol_users:
-                caracol_user_tiles = [agua_tile, residuos_tile]
+                # caracol_user_tiles = [agua_tile, residuos_tile]
+                caracol_user_tiles = [requests_tile]
                 render_tiles(caracol_user_tiles)
 
             if ss.username in wero:

@@ -157,7 +157,7 @@ def create_request_form():
         details = st.text_area("Comentarios")
         submitted = st.form_submit_button("Enviar solicitud")
         if submitted:
-            username = "user1"
+            username = f"{ss["name"]}"
             try:        
                 create_request(username, request_category, measure_type, estimated_amount, details)
                 st.toast("✅ Solicitud creada exitosamente")

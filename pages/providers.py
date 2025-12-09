@@ -6,7 +6,6 @@ import time
 from yaml.loader import SafeLoader
 import streamlit_authenticator as stauth
 import modules.common as mc
-from streamlit_navigation_bar import st_navbar
 
 ### Page specific imports ###
 from supabase import create_client, Client
@@ -392,7 +391,7 @@ def create_provider_dialog():
             certificado_bancario_file = st.file_uploader("Certificado bancario (opcional)", type=["pdf", "jpg", "png"])    
         submitted = st.form_submit_button("Enviar solicitud")
         if submitted:
-            username = "user1"
+            username = f"{ss["name"]}"
             # Validate required file uploads
             missing = []
             if not lic_amb_files:

@@ -183,7 +183,7 @@ def schedule_request_form(ids: list):
             if admin_note == "":
                 admin_note = None
             request = create_pickup(
-                username="user1",
+                username=f"{ss["name"]}",
                 provider_name=provider_name,
                 pickup_date=pickup_date.isoformat(),
                 admin_note=admin_note
