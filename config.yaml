@@ -11,6 +11,48 @@ credentials:
       name: Acoplasticos
       password: $2b$12$gfV/ny1JwjoJUd1GjXv06euklMLyqYbg3sDl9U3/lEesDro3XRGHe
       role: admin
+    almacen:
+      email: wero@gmail.com
+      failed_login_attempts: 0
+      logged_in: true
+      name: Almacen
+      password: $2b$12$0ZPsSv5YmuVPNINXQWWedu92R4GkVOWPRLCMcNtnjw2RUjmi1zZhe
+      role: caracol_users
+    caracol:
+      email: wero@gmail.com
+      failed_login_attempts: 0
+      logged_in: false
+      name: Caracol
+      password: $2b$12$aa5WVOL6abDpsUpHafLvIOokcd/Br7UTb7AGwJB.TOi/mmbYLraHS
+      role: caracol
+    enfermeria:
+      email: wero@gmail.com
+      failed_login_attempts: 0
+      logged_in: false
+      name: Enfermeria
+      password: $2b$12$ifI.VqCU3Mz0s13kBY72suKm8B4IxYpgmSS5wMaTiTAR67fHUhPbC
+      role: caracol_users
+    mantenimiento:
+      email: wero@gmail.com
+      failed_login_attempts: 0
+      logged_in: false
+      name: Mantenimiento
+      password: $2b$12$FcznG6HfbTqBrkVKK1FCkuparOChwdQ8s3.MHl4TgZtCc2yIW4F6S
+      role: caracol_users
+    sedes:
+      email: wero@gmail.com
+      failed_login_attempts: 0
+      logged_in: false
+      name: Sedes
+      password: $2b$12$SpTTS5crDcW5gqzc3UWsTen.Bg6yuRcsBSfcNo.fgAhU./XKk9DXm
+      role: caracol_users
+    ti:
+      email: wero@gmail.com
+      failed_login_attempts: 0
+      logged_in: false
+      name: Ti
+      password: $2b$12$u.ekDC11ZUO81tdztyUdDOv4nrwu5JxqQ2iD1hjmXdPmTXhfE1fUW
+      role: caracol_users
     wero:
       email: wero@gmail.com
       failed_login_attempts: 0
@@ -25,48 +67,6 @@ credentials:
       name: Wero Caracol
       password: $2b$12$LNs921eIyRPTrxEchDYbnuA/FernrU4NHNFrhMaRMZTs3HJGQzHmq
       role: wero
-    caracol:
-      email: wero@gmail.com
-      failed_login_attempts: 0
-      logged_in: false
-      name: Caracol
-      password: caracol123
-      role: caracol
-    almacen:
-      email: wero@gmail.com
-      failed_login_attempts: 0
-      logged_in: false
-      name: Almacen
-      password: almacen123
-      role: caracol_users
-    enfermeria:
-      email: wero@gmail.com
-      failed_login_attempts: 0
-      logged_in: false
-      name: Enfermeria
-      password: enfermeria123
-      role: caracol_users
-    mantenimiento:
-      email: wero@gmail.com
-      failed_login_attempts: 0
-      logged_in: false
-      name: Mantenimiento
-      password: mantenimiento123
-      role: caracol_users
-    sedes:
-      email: wero@gmail.com
-      failed_login_attempts: 0
-      logged_in: false
-      name: Sedes
-      password: sedes123
-      role: caracol_users
-    ti:
-      email: wero@gmail.com
-      failed_login_attempts: 0
-      logged_in: false
-      name: Ti
-      password: ti123
-      role: caracol_users
     wero2:
       email: wero@gmail.com
       failed_login_attempts: 0

@@ -117,7 +117,7 @@ def MenuButtons(location: Literal['residuos', 'home'], user_roles=None):
         # (1) Only the admin role can access page 1 and other pages.
         # In a user roles get all the usernames with admin role.
         caracol = [k for k, v in user_roles.items() if v == 'caracol']
-        caracol_users = [k for k, v in user_roles.items() if v == 'usuario_caracol']
+        caracol_users = [k for k, v in user_roles.items() if v == 'caracol_users']
         wero = [k for k, v in user_roles.items() if v == 'wero']
 
         # Show page 1 if the username that logged in is an admin.
@@ -128,8 +128,8 @@ def MenuButtons(location: Literal['residuos', 'home'], user_roles=None):
 
             if ss.username in caracol_users:
                 # caracol_user_tiles = [agua_tile, residuos_tile]
-                caracol_user_tiles = [requests_tile]
-                render_tiles(caracol_user_tiles)
+                # caracol_user_tiles = [requests_tile]
+                st.switch_page("./pages/residuos_solidos.py")
 
             if ss.username in wero:
                 wero_tiles = [agua_tile, residuos_tile, energia_tile]
