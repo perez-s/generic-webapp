@@ -25,7 +25,7 @@ supabase_key = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(supabase_url, supabase_key)
 
 ### Functions for the page ###
-@st.dialog("Editar solicitud", width="large")
+@st.dialog("Editar solicitud", width="medium")
 def update_request_form(id:int, request_category_default:list, measure_type_default: str, estimated_amount_default: int, details_default: str):
     request_form = st.form("request_form")
     with request_form:
@@ -69,7 +69,7 @@ def update_request(request_id: int, request_category:list, measure_type: str, es
         return request
 
     except Exception as e:
-        st.error(f"Error updating request: {e}")
+        st.toast(f"❌ Error al actualizar la solicitud: {e.message}")
 
 def select_request(request_id: int):
     try:
@@ -78,16 +78,22 @@ def select_request(request_id: int):
         ).eq("id", request_id).execute()
         return request.data[0] if request.data else None
     except Exception as e:
-        st.error(f"Error fetching request: {e}")
+        st.toast(f"❌ Error al obtener la solicitud: {e.message}")
         return None
 
-def delete_request(ids: list):
+def cancel_request(ids: list):
+    now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
     try:
         for request_id in ids:
-            supabase.table("requests").delete().eq("id", request_id).execute()
-        return st.toast("✅ Solicitud(es) eliminada(s) exitosamente")
+            supabase.table("requests").update(
+                {
+                    "status": "Cancelada",
+                    "updated_at": now
+                 }
+            ).eq("id", request_id).execute()
+        return st.toast("✅ Solicitudes canceladas exitosamente")
     except Exception as e:
-        return st.toast(f"❌ Error al eliminar la(s) solicitud(es): {e}")
+        return st.toast(f"❌ Error al cancelar solicitudes: {e.message}")
 
 def create_request_button():
     col1, col2, col3 = st.columns(3)
@@ -100,7 +106,7 @@ def get_enum_values(enum_name: str):
         result = supabase.rpc('get_types', {'enum_type': f'{enum_name}'}).execute()
         return result.data
     except Exception as e:
-        print(f"Error fetching enum values: {e}")
+        print(f"Error fetching enum values: {e.message}")
 
 def create_request(username: str, request_category:list, measure_type: str, estimated_amount: int,details: str):
     now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
@@ -117,10 +123,11 @@ def create_request(username: str, request_category:list, measure_type: str, esti
             "created_at": now,
             "updated_at": now
         }).execute()
+        st.toast("✅ Solicitud creada exitosamente")
+        st.rerun()
         return request
-
     except Exception as e:
-        st.error(f"Error creating request: {e}")
+        st.toast(f"❌ Error al crear la solicitud: {e.message}")
 
 def list_all_requests(limit=200):
     try:
@@ -129,10 +136,10 @@ def list_all_requests(limit=200):
         ).order("id", desc=True).limit(limit).execute()
         return requests.data
     except Exception as e:
-        st.error(f"Error fetching requests: {e}")
-        return []
+        st.toast(f"❌ Error al obtener las solicitudes: {e.message}")
+ 
 
-@st.dialog("Crear solicitud", width="large")
+@st.dialog("Crear solicitud", width="medium")
 def create_request_form():
     request_form = st.form("request_form")
     with request_form:
@@ -148,28 +155,30 @@ def create_request_form():
         request_category = st.multiselect(
             "Categoria de los residuos",
             options=get_enum_values("residue_type")
+            ,
         )
         col1,col2 = st.columns(2)
         with col1:
             measure_type = st.radio("Tipo de unidades", options=["m3", "kg"])
         with col2:
-            estimated_amount = st.number_input("Cantidad estimada", min_value=1, max_value=100, step=1)
+            estimated_amount = st.number_input("Cantidad estimada", min_value=1, step=1)
         details = st.text_area("Comentarios")
         submitted = st.form_submit_button("Enviar solicitud")
         if submitted:
             username = f"{ss["name"]}"
             try:        
                 create_request(username, request_category, measure_type, estimated_amount, details)
-                st.toast("✅ Solicitud creada exitosamente")
-                st.rerun()
             except Exception as e:
-                st.toast(f"❌ Error al crear la solicitud")
+                st.toast(f"❌ Error al crear la solicitud: {e.message}")
 
-def display_pending_requests_table(requests_data):
+def display_pending_requests_table(requests_data, username):
     try:   
         rows = pd.DataFrame(requests_data)
-        rows = rows[["id","status", "request_category","measure_type","estimated_amount", "created_at", "updated_at"]]
-        rows = rows[rows["status"] == "Pendiente"]
+        rows = rows[["id","username","status", "request_category","measure_type","estimated_amount", "created_at", "updated_at"]]
+        rows = rows[(rows["status"] == "Pendiente") & (rows["username"] == username)]
+        if rows.empty:
+            st.write(f"No hay solicitudes disponibles")
+            return
         rows["created_at"] = pd.to_datetime(rows["created_at"])
         rows["updated_at"] = pd.to_datetime(rows["updated_at"])
         rows.set_index("id", inplace=True)
@@ -218,16 +227,20 @@ def display_pending_requests_table(requests_data):
                     )
         if selected_count > 0 or selected_count >= 2:
             with col2:
-                if st.button("🗑️ Eliminar solicitudes", width="stretch"):
+                if st.button("❌ Cancelar solicitudes", width="stretch"):
                     confirm_delete_dialog(displayed_table[displayed_table["Seleccionar"]].index.tolist())
            
     except Exception as e:
             st.write(f"No hay solicitudes pendientes disponibles") 
 
-def display_all_requests_table(requests_data):
+def display_all_requests_table(requests_data, username):
     try:
         rows = pd.DataFrame(requests_data)
-        rows = rows[["id","status", "request_category","measure_type","estimated_amount", "admin_note","created_at", "updated_at"]]
+        rows = rows[["id","username","status", "request_category","measure_type","estimated_amount", "admin_note","created_at", "updated_at"]]
+        rows = rows[rows["username"] == username]
+        if rows.empty:
+            st.write(f"No hay solicitudes disponibles")
+            return
         rows["created_at"] = pd.to_datetime(rows["created_at"])
         rows["updated_at"] = pd.to_datetime(rows["updated_at"])
         rows.set_index("id", inplace=True)
@@ -266,9 +279,9 @@ def display_all_requests_table(requests_data):
 @st.dialog("⚠️ Confirmar eliminación")
 def confirm_delete_dialog(request_ids: list):
     """Confirmation dialog for deleting requests."""
-    st.warning(f"¿Estás seguro de que deseas eliminar {len(request_ids)} solicitud(es)?")
-    st.markdown("Esta acción eliminará:")
-    st.markdown("- Los registros de la base de datos")
+    st.warning(f"¿Estás seguro de que deseas cancelar {len(request_ids)} solicitud(es)?")
+    st.markdown("Esta acción cancelará:")
+    st.markdown("- La solicitud ya no estará activa.")
     st.error("⚠️ Esta acción no se puede deshacer.")
     
     col1, col2 = st.columns(2)
@@ -276,8 +289,8 @@ def confirm_delete_dialog(request_ids: list):
         if st.button("❌ Cancelar", width="stretch", type="secondary"):
             st.rerun()
     with col2:
-        if st.button("🗑️ Eliminar", width="stretch", type="primary"):
-            if delete_request(request_ids):
+        if st.button("✅ Confirmar", width="stretch", type="primary"):
+            if cancel_request(request_ids):
                 time.sleep(1)
                 st.rerun()
 
@@ -300,9 +313,9 @@ if ss["authentication_status"]:
     st.divider()
     tab1, tab2 = st.tabs(["📄 Solicitudes pendientes", "📊 Todas las solicitudes"])
     with tab1:
-        display_pending_requests_table(list_all_requests())
+        display_pending_requests_table(list_all_requests(), ss["name"])
     with tab2:
-        display_all_requests_table(list_all_requests())
+        display_all_requests_table(list_all_requests(), ss["name"])
 
 else:
     st.switch_page("./pages/login_home.py")

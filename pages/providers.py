@@ -69,7 +69,7 @@ def delete_provider(provider_ids: list):
         return True
 
     except Exception as e:
-        st.error(f"Error eliminando proveedor(es): {e}")
+        st.error(f"Error eliminando proveedor(es): {e.message}")
         return False
 
 @st.dialog("⚠️ Confirmar eliminación")
@@ -130,7 +130,7 @@ def update_provider(
         return request
 
     except Exception as e:
-        st.error(f"Error actualizando proveedor: {e}")
+        st.error(f"Error actualizando proveedor: {e.message}")
 
 @st.dialog("Actualizar proveedor", width="large")
 def update_provider_form(id: int,provider_name_default: str, provider_nit_default: int, provider_email_default: str, provider_contact_default: str, provider_contact_phone_default: int, provider_website_default: str, provider_category_default: list, provider_activity_default: list, lic_amb_path_default: str, rut_path_default: str, ccio_path_default: str, other_docs_path_default: str, certificado_bancario_path_default: str = ""):    
@@ -246,7 +246,7 @@ def select_provider(provider_id: int):
         ).eq("id", provider_id).execute()
         return provider.data[0] if provider.data else None
     except Exception as e:
-        st.error(f"Error seleccionando proveedor: {e}")
+        st.error(f"Error seleccionando proveedor: {e.message}")
         return None
 
 def create_provider_button():
@@ -295,7 +295,7 @@ def create_provider(
         return request
 
     except Exception as e:
-        st.error(f"Error creando proveedor: {e}")
+        st.error(f"Error creando proveedor: {e.message}")
 
 def list_all_providers(limit=200):
     try:
@@ -304,7 +304,7 @@ def list_all_providers(limit=200):
         ).order("id", desc=True).limit(limit).execute()
         return providers.data
     except Exception as e:
-        st.error(f"Error fetching providers: {e}")
+        st.error(f"Error fetching providers: {e.message}")
         return []
 
 def format_date(date_str: str) -> str:
@@ -319,7 +319,7 @@ def path_file(provider_nit, provider_name, file_name, upload_file) -> str:
         ext = upload_file.type.split('/')[-1]
         return f"uploads/{provider_nit}_{provider_name}_{file_name}.{ext}"
     except Exception as e:
-        st.error(f"Error generando ruta de archivo: {e}")
+        st.error(f"Error generando ruta de archivo: {e.message}")
 
 def path_files_multiple(provider_nit, provider_name, file_name_prefix, upload_files) -> list:
     """Generate paths for multiple files."""
@@ -332,7 +332,7 @@ def path_files_multiple(provider_nit, provider_name, file_name_prefix, upload_fi
             paths.append(path)
         return paths
     except Exception as e:
-        st.error(f"Error generando rutas de archivos: {e}")
+        st.error(f"Error generando rutas de archivos: {e.message}")
         return []
 
 def save_file(file_uploader, file_path) -> str:
@@ -341,14 +341,14 @@ def save_file(file_uploader, file_path) -> str:
             w.write(file_uploader.getvalue())
         return file_path
     except Exception as e:
-        st.error(f"Error guardando archivo: {e}")
+        st.error(f"Error guardando archivo: {e.message}")
 
 def get_enum_values(enum_name: str):
     try:
         result = supabase.rpc('get_types', {'enum_type': f'{enum_name}'}).execute()
         return result.data
     except Exception as e:
-        print(f"Error fetching enum values: {e}")
+        print(f"Error fetching enum values: {e.message}")
 
 @st.dialog("Crear proveedor", width="large")
 def create_provider_dialog():
@@ -462,7 +462,7 @@ def create_provider_dialog():
                     time.sleep(2)
                     st.rerun()
             except Exception as e:
-                st.toast(f"❌ Error al crear proveedor: {e}")
+                st.toast(f"❌ Error al crear proveedor: {e.message}")
 
 def display_providers_table(providers_data):
     try:
@@ -564,7 +564,7 @@ def provider_detail_view(provider_id: int):
                                             pdf_data = pdf_file.read()
                                             st.pdf(pdf_data, key=f"view_lic_amb_pdf_{idx}")
                                     except Exception as e:
-                                        st.error(f"Error cargando PDF: {e}")
+                                        st.error(f"Error cargando PDF: {e.message}")
                         if not has_files:
                             st.caption("No hay archivos disponibles")
                     else:
@@ -582,7 +582,7 @@ def provider_detail_view(provider_id: int):
                             pdf_data = pdf_file.read()
                             st.pdf(pdf_data, key="view_rut_pdf")
                     except Exception as e:
-                        st.error(f"Error cargando PDF: {e}")
+                        st.error(f"Error cargando PDF: {e.message}")
             else:
                 st.caption("No hay archivo disponible")
             
@@ -596,7 +596,7 @@ def provider_detail_view(provider_id: int):
                             pdf_data = pdf_file.read()
                             st.pdf(pdf_data, key="view_ccio_pdf")
                     except Exception as e:
-                        st.error(f"Error cargando PDF: {e}")
+                        st.error(f"Error cargando PDF: {e.message}")
             else:
                 st.caption("No hay archivo disponible")
             
@@ -610,7 +610,7 @@ def provider_detail_view(provider_id: int):
                             pdf_data = pdf_file.read()
                             st.pdf(pdf_data, key="view_certificado_bancario_pdf")
                     except Exception as e:
-                        st.error(f"Error cargando PDF: {e}")
+                        st.error(f"Error cargando PDF: {e.message}")
             else:
                 st.caption("No hay archivo disponible")
 
@@ -630,7 +630,7 @@ def provider_detail_view(provider_id: int):
                                             pdf_data = pdf_file.read()
                                             st.pdf(pdf_data, key=f"view_other_docs_pdf_{idx}")
                                     except Exception as e:
-                                        st.error(f"Error cargando PDF: {e}")
+                                        st.error(f"Error cargando PDF: {e.message}")
                         if not has_files:
                             st.caption("No hay archivos disponibles")
                     else:
@@ -639,7 +639,7 @@ def provider_detail_view(provider_id: int):
                     st.caption("No hay archivos disponibles")
     
     except Exception as e:
-        st.error(f"Error cargando detalles del proveedor: {e}")
+        st.error(f"Error cargando detalles del proveedor: {e.message}")
 
 def display_all_providers_table(providers_data):
     try:
@@ -722,7 +722,7 @@ def pdf_viewer_dialog(pdf_path: str):
             PDFbyte = pdf_file.read()
             st.pdf(PDFbyte)
     except Exception as e:
-        st.error(f"Error loading PDF: {e}")
+        st.error(f"Error loading PDF: {e.message}")
 
 ### Page layout and logic ###
 mc.protected_content()

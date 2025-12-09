@@ -28,7 +28,7 @@ def get_providers():
         providers = supabase.table("providers").select("provider_name").execute()
         return [provider['provider_name'] for provider in providers.data]
     except Exception as e:
-        st.error(f"Error fetching providers: {e}")
+        st.error(f"Error fetching providers: {e.message}")
         return []
 
 def display_pending_requests_table(requests_data):
@@ -145,7 +145,7 @@ def get_enum_values(enum_name: str):
         result = supabase.rpc('get_types', {'enum_type': f'{enum_name}'}).execute()
         return result.data
     except Exception as e:
-        print(f"Error fetching enum values: {e}")
+        print(f"Error fetching enum values: {e.message}")
 
 @st.dialog("Programar solicitudes", width="large")
 def schedule_request_form(ids: list):
@@ -214,7 +214,7 @@ def update_request_status(request_ids: list, request_status: str, admin_note: st
         return request
 
     except Exception as e:
-        st.error(f"Error updating request: {e}")
+        st.error(f"Error updating request: {e.message}")
 
 def select_request(request_id: int):
     try:
@@ -223,7 +223,7 @@ def select_request(request_id: int):
         ).eq("id", request_id).execute()
         return request.data[0] if request.data else None
     except Exception as e:
-        st.error(f"Error fetching request: {e}")
+        st.error(f"Error fetching request: {e.message}")
         return None
 
 def list_all_requests(limit=200):
@@ -233,7 +233,7 @@ def list_all_requests(limit=200):
         ).order("id", desc=True).limit(limit).execute()
         return requests.data
     except Exception as e:
-        st.error(f"Error fetching requests: {e}")
+        st.error(f"Error fetching requests: {e.message}")
         return []
 
 def create_pickup(username: str, provider_name: str, pickup_date: str, admin_note: str = None):
@@ -249,7 +249,7 @@ def create_pickup(username: str, provider_name: str, pickup_date: str, admin_not
         }).execute()
         return request
     except Exception as e:
-        st.error(f"Error creating pickup request: {e}")
+        st.error(f"Error creating pickup request: {e.message}")
 
 def create_pickup_requests(request_ids: list, pickup_id: int):
     try:
@@ -259,7 +259,7 @@ def create_pickup_requests(request_ids: list, pickup_id: int):
                 "pickup_id": pickup_id
             }).execute()
     except Exception as e:
-        st.error(f"Error creating pickup requests: {e}")
+        st.error(f"Error creating pickup requests: {e.message}")
 
 def display_schedule_pickup_table(pickup_data):
     try:
@@ -378,7 +378,7 @@ def list_all_pickups(limit=200):
         pickups = supabase.table("pickup").select("*").order("id", desc=True).limit(limit).execute()
         return pickups.data
     except Exception as e:
-        st.error(f"Error fetching pickups: {e}")
+        st.error(f"Error fetching pickups: {e.message}")
 
 def select_pickup_requests(pickup_id: int):
     try:
@@ -387,7 +387,7 @@ def select_pickup_requests(pickup_id: int):
         ).eq("pickup_id", pickup_id).execute()
         return pickup_requests.data if pickup_requests.data else None
     except Exception as e:
-        st.error(f"Error fetching pickup requests: {e}")
+        st.error(f"Error fetching pickup requests: {e.message}")
         return []
 
 def cancel_pickups(pickup_ids: list, admin_note: str = None):
@@ -415,7 +415,7 @@ def cancel_pickups(pickup_ids: list, admin_note: str = None):
         return pickup
 
     except Exception as e:
-        st.error(f"Error canceling pickup: {e}")
+        st.error(f"Error canceling pickup: {e.message}")
     st.rerun()    
 
 @st.dialog("Cancelar recolección", width="small")
@@ -464,7 +464,7 @@ def update_pickup(pickup_id: int, pickup_date: str, provider_name: str, admin_no
         return pickup
 
     except Exception as e:
-        st.error(f"Error updating pickup: {e}")
+        st.error(f"Error updating pickup: {e.message}")
 
 if 'authentication_status' not in ss:
     st.switch_page('./pages/login_home.py')

@@ -3,3 +3,4 @@ later/
 .env
 __pycache__/
 uploads/
+config.yaml
