@@ -34,11 +34,13 @@ def logout_and_home():
         </style>
         """, unsafe_allow_html=True)
     authenticator = stauth.Authenticate('config.yaml')
-    columns = st.columns([1,1,1,1,1,1,2])
+    columns = st.columns([1,1,2,1,1,1,2])
     with columns[0]:
         st.page_link("./pages/residuos_peligrosos.py", label="⬅️ Atrás", width="stretch")
         st.page_link("./pages/login_home.py", label="🏠 Inicio", width="stretch")
         authenticator.logout(button_name='Cerrar sesión', location='main', use_container_width=True, key='logoutformats')
+    with columns[2]:
+        st.markdown(f"Sesión iniciada como: **{ss['name']}**")
     with columns[6]:
         st.image("./resources/Logo2.png", width="stretch")
 

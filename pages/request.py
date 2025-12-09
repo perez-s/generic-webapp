@@ -113,7 +113,6 @@ def create_request(username: str, request_category:list, measure_type: str, esti
     try:
         request = supabase.table("requests").insert({
             "username": username,
-            "service_type": "Recolección",
             "request_category": request_category,
             "measure_type": measure_type,
             "estimated_amount": estimated_amount,
@@ -132,7 +131,7 @@ def create_request(username: str, request_category:list, measure_type: str, esti
 def list_all_requests(limit=200):
     try:
         requests = supabase.table("requests").select(
-            "id, username, service_type, request_category, measure_type, estimated_amount, details, status, admin_note, created_at, updated_at"
+            "id, username, request_category, measure_type, estimated_amount, details, status, admin_note, created_at, updated_at"
         ).order("id", desc=True).limit(limit).execute()
         return requests.data
     except Exception as e:
@@ -174,10 +173,10 @@ def create_request_form():
 def display_pending_requests_table(requests_data, username):
     try:   
         rows = pd.DataFrame(requests_data)
-        rows = rows[["id","username","status", "request_category","measure_type","estimated_amount", "created_at", "updated_at"]]
+        rows = rows[["id","username","status","request_category","measure_type","estimated_amount","created_at","updated_at"]]
         rows = rows[(rows["status"] == "Pendiente") & (rows["username"] == username)]
         if rows.empty:
-            st.write(f"No hay solicitudes disponibles")
+            st.info(f"📭 No hay solicitudes pendientes disponibles")
             return
         rows["created_at"] = pd.to_datetime(rows["created_at"])
         rows["updated_at"] = pd.to_datetime(rows["updated_at"])
@@ -231,15 +230,14 @@ def display_pending_requests_table(requests_data, username):
                     confirm_delete_dialog(displayed_table[displayed_table["Seleccionar"]].index.tolist())
            
     except Exception as e:
-            st.write(f"No hay solicitudes pendientes disponibles") 
-
+        st.info(f"📭 No hay solicitudes disponibles")
 def display_all_requests_table(requests_data, username):
     try:
         rows = pd.DataFrame(requests_data)
         rows = rows[["id","username","status", "request_category","measure_type","estimated_amount", "admin_note","created_at", "updated_at"]]
         rows = rows[rows["username"] == username]
         if rows.empty:
-            st.write(f"No hay solicitudes disponibles")
+            st.info(f"📭 No hay solicitudes disponibles")
             return
         rows["created_at"] = pd.to_datetime(rows["created_at"])
         rows["updated_at"] = pd.to_datetime(rows["updated_at"])

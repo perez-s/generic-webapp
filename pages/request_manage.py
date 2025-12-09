@@ -42,7 +42,7 @@ def display_pending_requests_table(requests_data):
         rows["Seleccionar"] = False
 
         if not rows.any().any():
-            st.info("No hay solicitudes pendientes aun. 📭")
+            st.info("📭 No hay solicitudes pendientes aun.")
             return
 
         displayed_table = st.data_editor(
@@ -93,10 +93,8 @@ def display_all_requests_table(requests_data):
         rows["created_at"] = pd.to_datetime(rows["created_at"])
         rows["updated_at"] = pd.to_datetime(rows["updated_at"])
         rows.set_index("id", inplace=True)
-        rows["Seleccionar"] = False
-
         if not rows.any().any():
-            st.info("No hay solicitudes disponibles aun. 📭")
+            st.info("📭 No hay solicitudes disponibles aun.")
             return
 
         displayed_table = st.data_editor(
@@ -131,12 +129,6 @@ def display_all_requests_table(requests_data):
                 )
             }
         )
-        selected_count = displayed_table.Seleccionar.sum()
-        if selected_count > 0:
-            if st.button("🗓️ Agendar solicitud", width="stretch"):
-                schedule_request_form(
-                    ids=displayed_table[displayed_table["Seleccionar"]].index.tolist()
-                )
     except Exception as e:
             st.write(f"No hay solicitudes pendientes disponibles") 
 
@@ -229,7 +221,7 @@ def select_request(request_id: int):
 def list_all_requests(limit=200):
     try:
         requests = supabase.table("requests").select(
-            "id, username, service_type, request_category, measure_type, estimated_amount, details, status, admin_note, created_at, updated_at"
+            "id, username, request_category, measure_type, estimated_amount, details, status, admin_note, created_at, updated_at"
         ).order("id", desc=True).limit(limit).execute()
         return requests.data
     except Exception as e:

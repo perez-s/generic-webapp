@@ -64,7 +64,6 @@ if ss["authentication_status"]:
             key="demo_tile4"
         )
     if residuos_peligrosos:
-        st.info("clicked!")
         st.switch_page("./pages/residuos_peligrosos.py")
 else:
     st.switch_page("./pages/login_home.py")
