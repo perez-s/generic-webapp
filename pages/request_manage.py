@@ -25,7 +25,7 @@ supabase: Client = create_client(supabase_url, supabase_key)
 
 def get_providers():
     try:
-        providers = supabase.table("providers").select("provider_name").execute()
+        providers = supabase.table("providers").select("provider_name").eq("provider_is_active", True).execute()
         return [provider['provider_name'] for provider in providers.data]
     except Exception as e:
         st.error(f"Error fetching providers: {e.message}")

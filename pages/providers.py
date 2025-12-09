@@ -23,49 +23,49 @@ supabase_key = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(supabase_url, supabase_key)
 
 ### Functions for the page ###
-def delete_provider(provider_ids: list):
-    """Delete one or more providers by their IDs and remove their files."""
+def deactivate_provider(provider_ids: list):
+    """Deactivate one or more providers by their IDs and remove their files."""
     try:
-        deleted_files = 0
+        # deleted_files = 0
         for provider_id in provider_ids:
-            # Fetch file paths to delete files from disk
-            provider = supabase.table("providers").select(
-                "lic_amb_path, rut_path, ccio_path, other_docs_path, certificado_bancario_path"
-            ).eq("id", provider_id).execute()
+            # # Fetch file paths to delete files from disk
+            # provider = supabase.table("providers").select(
+            #     "lic_amb_path, rut_path, ccio_path, other_docs_path, certificado_bancario_path"
+            # ).eq("id", provider_id).execute()
 
-            if provider.data:
-                # Handle multiple files for lic_amb and other_docs (comma-separated)
-                lic_amb_paths = provider.data[0].get("lic_amb_path", "")
-                other_docs_paths = provider.data[0].get("other_docs_path", "")
-                rut_path = provider.data[0].get("rut_path", "")
-                ccio_path = provider.data[0].get("ccio_path", "")
-                certificado_bancario_path = provider.data[0].get("certificado_bancario_path", "")
+            # if provider.data:
+            #     # Handle multiple files for lic_amb and other_docs (comma-separated)
+            #     lic_amb_paths = provider.data[0].get("lic_amb_path", "")
+            #     other_docs_paths = provider.data[0].get("other_docs_path", "")
+            #     rut_path = provider.data[0].get("rut_path", "")
+            #     ccio_path = provider.data[0].get("ccio_path", "")
+            #     certificado_bancario_path = provider.data[0].get("certificado_bancario_path", "")
 
-                file_paths = []
-                if lic_amb_paths:
-                    file_paths.extend([p.strip() for p in lic_amb_paths.split(",") if p.strip()])
-                if other_docs_paths:
-                    file_paths.extend([p.strip() for p in other_docs_paths.split(",") if p.strip()])
-                if rut_path:
-                    file_paths.append(rut_path.strip())
-                if ccio_path:
-                    file_paths.append(ccio_path.strip())
-                if certificado_bancario_path:
-                    file_paths.append(certificado_bancario_path.strip())
+            #     file_paths = []
+            #     if lic_amb_paths:
+            #         file_paths.extend([p.strip() for p in lic_amb_paths.split(",") if p.strip()])
+            #     if other_docs_paths:
+            #         file_paths.extend([p.strip() for p in other_docs_paths.split(",") if p.strip()])
+            #     if rut_path:
+            #         file_paths.append(rut_path.strip())
+            #     if ccio_path:
+            #         file_paths.append(ccio_path.strip())
+            #     if certificado_bancario_path:
+            #         file_paths.append(certificado_bancario_path.strip())
 
-                # Remove files from disk if they exist
-                for file_path in file_paths:
-                    if file_path and os.path.exists(file_path):
-                        try:
-                            os.remove(file_path)
-                            deleted_files += 1
-                        except Exception as file_err:
-                            print(f"Warning: Could not delete file {file_path}: {file_err}")
+            #     # Remove files from disk if they exist
+            #     for file_path in file_paths:
+            #         if file_path and os.path.exists(file_path):
+            #             try:
+            #                 os.remove(file_path)
+            #                 deleted_files += 1
+            #             except Exception as file_err:
+            #                 print(f"Warning: Could not delete file {file_path}: {file_err}")
 
             # Delete provider from database
-            supabase.table("providers").delete().eq("id", provider_id).execute()
+            supabase.table("providers").update({"provider_is_active": False}).eq("id", provider_id).execute()
 
-        st.toast(f"✅ {len(provider_ids)} proveedor(es) y {deleted_files} archivo(s) eliminados exitosamente")
+        st.toast(f"✅ {len(provider_ids)} proveedores eliminados exitosamente")
         return True
 
     except Exception as e:
@@ -87,7 +87,7 @@ def confirm_delete_dialog(provider_ids: list):
             st.rerun()
     with col2:
         if st.button("🗑️ Eliminar", width="stretch", type="primary"):
-            if delete_provider(provider_ids):
+            if deactivate_provider(provider_ids):
                 time.sleep(1)
                 st.rerun()
 
@@ -111,7 +111,7 @@ def update_provider(
     try:
         request = supabase.table("providers").update({
             "provider_name": provider_name,
-            "provider_nit": provider_nit,
+            # "provider_nit": provider_nit, # NIT should not be changed as it may require to rename files associated with the provider
             "provider_email": provider_email,
             "provider_contact": provider_contact,
             "provider_contact_phone": provider_contact_phone,
@@ -149,7 +149,7 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
         col1, col2 = st.columns(2)
         with col1:
             provider_name = st.text_input("Nombre del proveedor", value=provider_name_default)
-            provider_nit = st.number_input("NIT del proveedor", step=1, format="%d", value=provider_nit_default)
+            provider_nit = st.number_input("NIT del proveedor", step=1, format="%d", value=provider_nit_default, disabled=True)
             provider_email = st.text_input("Correo electrónico del proveedor", value=provider_email_default)
             provider_contact = st.text_input("Contacto", value=provider_contact_default)
 
@@ -196,7 +196,7 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
             # Update paths and save new files if uploaded
             if lic_amb_files:
                 # Save new lic_amb files and append to existing paths
-                new_lic_amb_paths = path_files_multiple(provider_nit, provider_name, "lic_amb", lic_amb_files)
+                new_lic_amb_paths = path_files_multiple(provider_nit, "lic_amb", lic_amb_files)
                 
                 # Append to existing paths instead of replacing
                 if lic_amb_path_default:
@@ -210,17 +210,17 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
                     save_file(file, path)
             
             if rut_file:
-                rut_path = path_file(provider_nit, provider_name, "rut", rut_file)
+                rut_path = path_file(provider_nit, "rut", rut_file)
                 save_file(rut_file, rut_path)
             
             if ccio_file:
-                ccio_path = path_file(provider_nit, provider_name, "ccio", ccio_file)
+                ccio_path = path_file(provider_nit, "ccio", ccio_file)
                 save_file(ccio_file, ccio_path)
             
             # Handle multiple other_docs files
             if other_docs_files:
                 # Save new other_docs files and append to existing paths
-                new_other_docs_paths = path_files_multiple(provider_nit, provider_name, "other_docs", other_docs_files)
+                new_other_docs_paths = path_files_multiple(provider_nit, "other_docs", other_docs_files)
                 
                 # Append to existing paths instead of replacing
                 if other_docs_path_default:
@@ -234,7 +234,7 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
                     save_file(file, path)
 
             if certificado_bancario_file:
-                certificado_bancario_path = path_file(provider_nit, provider_name, "certificado_bancario", certificado_bancario_file)
+                certificado_bancario_path = path_file(provider_nit, "certificado_bancario", certificado_bancario_file)
                 save_file(certificado_bancario_file, certificado_bancario_path)
             
             update_provider(id, provider_name, provider_nit, provider_email, provider_contact, provider_contact_phone, provider_website, provider_category, provider_auth_activities, lic_amb_path, rut_path, ccio_path, other_docs_path, certificado_bancario_path, now)     
@@ -262,14 +262,14 @@ def create_provider(
         provider_email: str, 
         provider_contact: str, 
         provider_contact_phone: int, 
-    provider_website: str,
+        provider_website: str,
         provider_category: list,
         provider_activity: list, 
         lic_amb_path: str, 
         rut_path: str, 
         ccio_path: str, 
-    other_docs_path: str,
-    certificado_bancario_path: str
+        other_docs_path: str,
+        certificado_bancario_path: str,
     ):
     now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
     print(now)
@@ -299,9 +299,7 @@ def create_provider(
 
 def list_all_providers(limit=200):
     try:
-        providers = supabase.table("providers").select(
-            "id, username, provider_name, provider_nit, provider_category, lic_amb_path, rut_path, ccio_path, other_docs_path, certificado_bancario_path, created_at, updated_at"
-        ).order("id", desc=True).limit(limit).execute()
+        providers = supabase.table("providers").select("*").order("id", desc=True).limit(limit).execute()
         return providers.data
     except Exception as e:
         st.error(f"Error fetching providers: {e.message}")
@@ -314,21 +312,21 @@ def format_date(date_str: str) -> str:
     # Format as desired
     return date_obj.strftime("%Y %B  %d %H:%M %Z")
 
-def path_file(provider_nit, provider_name, file_name, upload_file) -> str:
+def path_file(provider_nit, file_name, upload_file) -> str:
     try:
         ext = upload_file.type.split('/')[-1]
-        return f"uploads/{provider_nit}_{provider_name}_{file_name}.{ext}"
+        return f"uploads/{provider_nit}_{file_name}.{ext}"
     except Exception as e:
         st.error(f"Error generando ruta de archivo: {e.message}")
 
-def path_files_multiple(provider_nit, provider_name, file_name_prefix, upload_files) -> list:
+def path_files_multiple(provider_nit, file_name_prefix, upload_files) -> list:
     """Generate paths for multiple files."""
     try:
         paths = []
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         for idx, upload_file in enumerate(upload_files):
             ext = upload_file.type.split('/')[-1]
-            path = f"uploads/{provider_nit}_{provider_name}_{file_name_prefix}_{timestamp}_{idx+1}.{ext}"
+            path = f"uploads/{provider_nit}_{file_name_prefix}_{timestamp}_{idx+1}.{ext}"
             paths.append(path)
         return paths
     except Exception as e:
@@ -406,19 +404,19 @@ def create_provider_dialog():
                 return
 
             # Build file paths safely
-            lic_amb_paths = path_files_multiple(provider_nit, provider_name, "lic_amb", lic_amb_files)
+            lic_amb_paths = path_files_multiple(provider_nit, "lic_amb", lic_amb_files)
             lic_amb_path = ",".join(lic_amb_paths) if lic_amb_paths else ""
-            rut_path = path_file(provider_nit, provider_name, "rut", rut_file)
-            ccio_path = path_file(provider_nit, provider_name, "ccio", ccio_file)
+            rut_path = path_file(provider_nit, "rut", rut_file)
+            ccio_path = path_file(provider_nit, "ccio", ccio_file)
             
             # Handle multiple other_docs files
             other_docs_paths = []
             if other_docs_files:
-                other_docs_paths = path_files_multiple(provider_nit, provider_name, "other_docs", other_docs_files)
+                other_docs_paths = path_files_multiple(provider_nit, "other_docs", other_docs_files)
             other_docs_path = ",".join(other_docs_paths) if other_docs_paths else ""
             certificado_bancario_path = ""
             if certificado_bancario_file:
-                certificado_bancario_path = path_file(provider_nit, provider_name, "certificado_bancario", certificado_bancario_file)
+                certificado_bancario_path = path_file(provider_nit, "certificado_bancario", certificado_bancario_file)
 
             # Persist provider record
             try:
@@ -463,30 +461,7 @@ def create_provider_dialog():
                     st.rerun()
             except Exception as e:
                 st.toast(f"❌ Error al crear proveedor: {e.message}")
-
-def display_providers_table(providers_data):
-    try:
-        rows = pd.DataFrame(providers_data)
-        rows.set_index("id", inplace=True)
-        st.dataframe(
-            rows,
-            width="stretch",
-            column_config={
-                "id": "ID del proveedor",
-                "provider_name": "Nombre del proveedor",
-                "created_at": st.column_config.DateColumn(
-                    "Fecha de creación",
-                    format="DD/MM/YY HH:mm"
-                ),
-                "updated_at": st.column_config.DateColumn(
-                    "Última modificación",
-                    format="DD/MM/YY HH:mm"
-                )
-            }
-        )
-    except Exception as e:
-        st.write(f"No hay datos disponibles") 
-
+                
 @st.dialog("📋 Detalle del proveedor", width="large")
 def provider_detail_view(provider_id: int):
     """Display detailed view of a provider with all information and downloadable files."""
@@ -644,6 +619,10 @@ def provider_detail_view(provider_id: int):
 def display_all_providers_table(providers_data):
     try:
         rows = pd.DataFrame(providers_data)
+        rows = rows[(rows["provider_is_active"] == True)]
+        if rows.empty:
+            st.info("📭 No hay proveedores disponibles aun.")
+            return
         rows = rows[["id", "provider_name", "provider_nit", "provider_category", "created_at", "updated_at"]]
         rows["created_at"] = pd.to_datetime(rows["created_at"])
         rows["updated_at"] = pd.to_datetime(rows["updated_at"])
@@ -658,6 +637,7 @@ def display_all_providers_table(providers_data):
             disabled=["id","provider_name", "provider_nit", "provider_category", "created_at", "updated_at", "Estado"],
             column_config={
                 "id": "ID",
+                "provider_is_active": "Activo",
                 "provider_name": "Nombre del proveedor",
                 "provider_nit": "NIT del proveedor",
                 "provider_category": st.column_config.MultiselectColumn(
@@ -714,15 +694,15 @@ def display_all_providers_table(providers_data):
     except Exception as e:
         st.write(f"No hay proveedores disponibles aun")
 
-@st.dialog("PDF Viewer", width="large")
-def pdf_viewer_dialog(pdf_path: str):
-    """Dialog to display a PDF file."""
-    try:
-        with open(pdf_path, "rb") as pdf_file:
-            PDFbyte = pdf_file.read()
-            st.pdf(PDFbyte)
-    except Exception as e:
-        st.error(f"Error loading PDF: {e.message}")
+# @st.dialog("PDF Viewer", width="large")
+# def pdf_viewer_dialog(pdf_path: str):
+#     """Dialog to display a PDF file."""
+#     try:
+#         with open(pdf_path, "rb") as pdf_file:
+#             PDFbyte = pdf_file.read()
+#             st.pdf(PDFbyte)
+#     except Exception as e:
+#         st.error(f"Error loading PDF: {e.message}")
 
 ### Page layout and logic ###
 mc.protected_content()
