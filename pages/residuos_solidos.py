@@ -7,7 +7,7 @@ import streamlit_authenticator as stauth
 import base64
 from pathlib import Path
 import modules.common as mc
-from streamlit_tile import streamlit_tile
+from modules.nav import MenuButtons
 
 mc.protected_content()
 
@@ -15,61 +15,9 @@ if 'authentication_status' not in ss:
     st.switch_page('./pages/login_home.py')
 
 if ss["authentication_status"]:
-    st.set_page_config(page_title="Bienvenido a WeroApp", layout="wide")
-    mc.logout_and_home('./pages/home.py')
-    col1, col2, col3 = st.columns([1, 1, 1])
 
-    with col1:
-        residuos_ordinarios = streamlit_tile(
-            label="Residuos Ordinarios",
-            title="Residuos Ordinarios",
-            description="Gestiona la recolección y el reciclaje de residuos ordinarios",
-            icon="🗑️",
-            color_theme="blue",
-            height="200px",
-            width="200px",
-            key="demo_tile"
-        )
-    with col2:
-        residuos_peligrosos = streamlit_tile(
-            label="Residuos Peligrosos",
-            title="Residuos Peligrosos",
-            description="Gestiona la recolección y el reciclaje de residuos peligrosos",
-            icon="☣️",
-            color_theme="blue",
-            height="200px",
-            width="200px",
-            key="demo_tile2"
-        )
-    with col3:
-        madera = streamlit_tile(
-            label="Madera",
-            title="Madera",
-            description="Gestiona la recolección y el reciclaje de residuos de madera",
-            icon="🪵",
-            color_theme="blue",
-            height="200px",
-            width="200px",
-            key="demo_tile3"
-        )
-    with col1:
-        RCDs = streamlit_tile(
-            label="RCD",
-            title="RCD",
-            description="Gestiona la recolección y el reciclaje de residuos de construcción y demolición",
-            icon="🏗️",
-            color_theme="blue",
-            height="200px",
-            width="200px",
-            key="demo_tile4"
-        )
-    if residuos_peligrosos:
-        st.switch_page("./pages/residuos_peligrosos.py")
-    if residuos_ordinarios:
-        st.toast("Funcionalidad en desarrollo", icon="⚠️")
-    if madera:
-        st.toast("Funcionalidad en desarrollo", icon="⚠️")
-    if RCDs:
-        st.toast("Funcionalidad en desarrollo", icon="⚠️")
+    mc.logout_and_home('./pages/home.py')
+
+    MenuButtons(location='residuos_solidos', user_roles=mc.get_roles())
 else:
     st.switch_page("./pages/login_home.py")

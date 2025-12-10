@@ -26,7 +26,7 @@ supabase: Client = create_client(supabase_url, supabase_key)
 
 ### Functions for the page ###
 @st.dialog("Editar solicitud", width="medium")
-def update_request_form(id:int, request_category_default:list, measure_type_default: str, estimated_amount_default: int, details_default: str):
+def update_request_form(id:int, request_category_default:list, measure_type_default: str, estimated_amount_default: float, details_default: str):
     request_form = st.form("request_form")
     with request_form:
         with st.expander("Instrucciones"):
@@ -47,7 +47,7 @@ def update_request_form(id:int, request_category_default:list, measure_type_defa
         with col1:
             measure_type = st.radio("Tipo de unidades", options=["m3", "kg"], index=["m3", "kg"].index(measure_type_default))
         with col2:
-            estimated_amount = st.number_input("Cantidad estimada", min_value=0.1, step=0.1, value=estimated_amount_default)
+            estimated_amount = st.number_input("Cantidad estimada", min_value=0.1, step=0.1, value=float(estimated_amount_default))
         details = st.text_area("Comentarios", value=details_default)
         submitted = st.form_submit_button("Enviar solicitud")
         if submitted:
@@ -104,7 +104,7 @@ def create_request_button():
 def get_enum_values(enum_name: str):
     try:
         result = supabase.rpc('get_types', {'enum_type': f'{enum_name}'}).execute()
-        return result.data
+        return sorted(result.data)
     except Exception as e:
         print(f"Error fetching enum values: {e.message}")
 
@@ -163,6 +163,8 @@ def create_request_form():
         details = st.text_area("Comentarios")
         submitted = st.form_submit_button("Enviar solicitud")
         if submitted:
+            if mc.validate_residue_types(request_category) == False:
+                return
             username = f"{ss["name"]}"
             try:        
                 create_request(username, request_category, measure_type, estimated_amount, details)

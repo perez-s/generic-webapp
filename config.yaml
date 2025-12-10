@@ -1,7 +1,7 @@
 cookie:
   expiry_days: 30
-  key: somesignaturekey
-  name: cookie_name
+  key: super_secret_key
+  name: session_cookie_name
 credentials:
   usernames:
     acoplasticos:
@@ -14,7 +14,7 @@ credentials:
     almacen:
       email: wero@gmail.com
       failed_login_attempts: 0
-      logged_in: true
+      logged_in: false
       name: Almacen
       password: $2b$12$0ZPsSv5YmuVPNINXQWWedu92R4GkVOWPRLCMcNtnjw2RUjmi1zZhe
       role: caracol_users

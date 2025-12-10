@@ -3,6 +3,8 @@ from streamlit import session_state as ss
 from streamlit_tile import streamlit_tile
 from typing import Literal
 
+hpixels = 200
+wpixels = 1000000000
 
 def energia_tile():
     energia = streamlit_tile(
@@ -11,8 +13,8 @@ def energia_tile():
         description="Controla y optimiza el uso de energía",
         icon="⚡",
         color_theme="blue",
-        height="200px",
-        width="200px",
+        height=hpixels,
+        width=wpixels,
         key="energia_tile"
     )
     if energia:
@@ -25,8 +27,8 @@ def agua_tile():
         description="Monitorea y gestiona el consumo de agua",
         icon="💧",
         color_theme="blue",
-        height="200px",
-        width="200px",
+        height=hpixels,
+        width=wpixels,
         key="agua_tile"
     )
     if agua:
@@ -39,12 +41,66 @@ def residuos_tile():
         description="Gestiona y optimiza la recolección de residuos sólidos",
         icon="🗑️",
         color_theme="blue",
-        height="200px",
-        width="200px",
+        height=hpixels,
+        width=wpixels,
         key="residuos_tile"
     )
     if residuos:
         st.switch_page('pages/residuos_solidos.py')
+
+def residuos_ordinarios_tile():
+    residuos_ordinarios = streamlit_tile(
+        label="Residuos Ordinarios",
+        title="Residuos Ordinarios",
+        description="Gestiona la recolección y el reciclaje de residuos ordinarios",
+        icon="🗑️",
+        color_theme="blue",
+        height=hpixels,
+        width=wpixels,
+        key="residuos_ordinarios_tile"
+    )
+    if residuos_ordinarios:
+        st.toast("Funcionalidad en desarrollo", icon="⚠️")
+
+def residuos_peligrosos_tile():
+    residuos_peligrosos = streamlit_tile(
+        label="Residuos Peligrosos",
+        title="Residuos Peligrosos",
+        description="Gestiona la recolección y el reciclaje de residuos peligrosos",
+        icon="☣️",
+        color_theme="blue",
+        height=hpixels,
+        width=wpixels,
+        key="residuos_peligrosos_tile"
+    )
+    if residuos_peligrosos:
+        st.switch_page("./pages/residuos_peligrosos.py")
+
+def madera_tile():
+    madera = streamlit_tile(
+        label="Madera",
+        title="Madera",
+        description="Gestiona la recolección y el reciclaje de residuos de madera",
+        icon="🪵",
+        color_theme="blue",
+        height=hpixels,
+        width=wpixels,
+        key="madera_tile"
+    )
+    if madera:
+        st.toast("Funcionalidad en desarrollo", icon="⚠️")
+
+def rcds_tile():
+    RCDs = streamlit_tile(
+        label="RCD",
+        title="RCD",
+        description="Gestiona la recolección y el reciclaje de residuos de construcción y demolición",
+        icon="🏗️",
+        color_theme="blue",
+        height=hpixels,
+        width=wpixels,
+        key="rcds_tile"
+    )
 
 def providers_tile():
     providers = streamlit_tile(
@@ -53,8 +109,8 @@ def providers_tile():
         description="Gestiona la información de los proveedores",
         icon="🏢",
         color_theme="blue",
-        height="200px",
-        width="200px",
+        height=hpixels,
+        width=wpixels,
         key="providers_tile"
     )
     if providers:
@@ -67,8 +123,8 @@ def requests_tile():
         description="Gestiona las solicitudes de recolección de materiales",
         icon="📝",
         color_theme="blue",
-        height="200px",
-        width="200px",
+        height=hpixels,
+        width=wpixels,
         key="requests_tile"
     )
     if requests:
@@ -81,8 +137,8 @@ def requests_manage_tile():
         description="Gestiona las solicitudes de recolección de materiales",
         icon="🛠️",
         color_theme="blue",
-        height="200px",
-        width="200px",
+        height=hpixels,
+        width=wpixels,
         key="requests_manage_tile"
     )
     if requests_manage:
@@ -95,8 +151,8 @@ def mail_test_tile():
         description="Envía un correo electrónico de prueba",
         icon="📧",
         color_theme="blue",
-        height="200px",
-        width="200px",
+        height=hpixels,
+        width=wpixels,
         key="mail_test_tile"
     )
     if mail_test:
@@ -113,7 +169,7 @@ def render_tiles(tiles_to_render: list):
                 counter = 0
 
 
-def MenuButtons(location: Literal['residuos', 'home'], user_roles=None):
+def MenuButtons(location: Literal['residuos_peligrosos', 'home', 'residuos_solidos'], user_roles=None):
 
     if user_roles is None:
         user_roles = {}
@@ -140,15 +196,13 @@ def MenuButtons(location: Literal['residuos', 'home'], user_roles=None):
                 render_tiles(caracol_tiles)
 
             if ss.username in caracol_users:
-                # caracol_user_tiles = [agua_tile, residuos_tile]
-                # caracol_user_tiles = [requests_tile]
                 st.switch_page("./pages/residuos_solidos.py")
 
             if ss.username in wero:
                 wero_tiles = [agua_tile, residuos_tile, energia_tile]
                 render_tiles(wero_tiles)
         
-        elif location == 'residuos':
+        elif location == 'residuos_peligrosos':
             if ss.username in caracol:
                 caracol_tiles = [providers_tile, requests_tile, requests_manage_tile]
                 render_tiles(caracol_tiles)
@@ -158,6 +212,19 @@ def MenuButtons(location: Literal['residuos', 'home'], user_roles=None):
                 render_tiles(caracol_user_tiles)
 
             if ss.username in wero:
-                wero_tiles = [providers_tile, requests_tile, requests_manage_tile, mail_test_tile]
+                # wero_tiles = [providers_tile, requests_tile, requests_manage_tile, mail_test_tile]
+                wero_tiles = [providers_tile, requests_tile, requests_manage_tile]
                 render_tiles(wero_tiles)
-        # (2) users with user and admin roles have access to page 2.     
+
+        elif location == 'residuos_solidos':
+            if ss.username in caracol:
+                caracol_tiles = [residuos_ordinarios_tile, residuos_peligrosos_tile, madera_tile, rcds_tile]
+                render_tiles(caracol_tiles)
+
+            if ss.username in caracol_users:
+                caracol_user_tiles = [residuos_ordinarios_tile, residuos_peligrosos_tile, madera_tile, rcds_tile]
+                render_tiles(caracol_user_tiles)
+
+            if ss.username in wero:
+                wero_tiles = [residuos_ordinarios_tile, residuos_peligrosos_tile, madera_tile, rcds_tile]
+                render_tiles(wero_tiles)

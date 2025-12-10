@@ -11,18 +11,18 @@ from modules.nav import MenuButtons
 
 
 authenticator = stauth.Authenticate('config.yaml')
-CONFIG_FILENAME = 'config.yaml'
-def get_roles():
-    """Gets user roles based on config file."""
-    with open(CONFIG_FILENAME) as file:
-        config = yaml.load(file, Loader=SafeLoader)
+# CONFIG_FILENAME = 'config.yaml'
+# def get_roles():
+#     """Gets user roles based on config file."""
+#     with open(CONFIG_FILENAME) as file:
+#         config = yaml.load(file, Loader=SafeLoader)
 
-    if config is not None:
-        cred = config['credentials']
-    else:
-        cred = {}
+#     if config is not None:
+#         cred = config['credentials']
+#     else:
+#         cred = {}
 
-    return {username: user_info['role'] for username, user_info in cred['usernames'].items() if 'role' in user_info}
+#     return {username: user_info['role'] for username, user_info in cred['usernames'].items() if 'role' in user_info}
 
 protected_content()
 
@@ -101,13 +101,11 @@ def logout():
     st.set_page_config(page_title="Bienvenido a WeroApp", layout="wide")
 
 st.set_page_config(page_title="Bienvenido a WeroApp", layout="centered")
-
-if 'authapp' not in ss:
-    ss.authapp = authenticator
-
 authenticator.login(location='main', fields={'Form name':'Iniciar sesión', 'Username':'Usuario', 'Password':'Contraseña', 'Login':'Ingresar', 'Captcha':'Captcha'}, key='loginhome1')
 
 if ss["authentication_status"]:
+    authenticator = ss.get('authapp')
+    time.sleep(1)
     st.switch_page("./pages/home.py")
 
 if ss["authentication_status"] is False:

@@ -41,7 +41,7 @@ def display_pending_requests_table(requests_data):
         rows.set_index("id", inplace=True)
         rows["Seleccionar"] = False
 
-        if not rows.any().any():
+        if rows.empty:
             st.info("📭 No hay solicitudes pendientes aun.")
             return
 
@@ -93,7 +93,7 @@ def display_all_requests_table(requests_data):
         rows["created_at"] = pd.to_datetime(rows["created_at"])
         rows["updated_at"] = pd.to_datetime(rows["updated_at"])
         rows.set_index("id", inplace=True)
-        if not rows.any().any():
+        if rows.empty:
             st.info("📭 No hay solicitudes disponibles aun.")
             return
 
@@ -135,7 +135,7 @@ def display_all_requests_table(requests_data):
 def get_enum_values(enum_name: str):
     try:
         result = supabase.rpc('get_types', {'enum_type': f'{enum_name}'}).execute()
-        return result.data
+        return sorted(result.data)
     except Exception as e:
         print(f"Error fetching enum values: {e.message}")
 
@@ -268,7 +268,7 @@ def display_schedule_pickup_table(pickup_data):
         rows["Seleccionar"] = False
         rows["request_ids"] = rows.index.map(lambda x: ", ".join(str(req["request_id"]) for req in select_pickup_requests(x)) if select_pickup_requests(x) else "N/A")
 
-        if not rows.any().any():
+        if rows.empty:
             st.info("📭 No hay recolecciones programadas aún. Programa una desde la pestaña de solicitudes pendientes.")
             return
 
@@ -327,7 +327,6 @@ def display_all_pickup_table(pickup_data):
         rows["created_at"] = pd.to_datetime(rows["created_at"])
         rows["updated_at"] = pd.to_datetime(rows["updated_at"])
         rows.set_index("id", inplace=True)
-        rows["Seleccionar"] = False
         rows["request_ids"] = rows.index.map(lambda x: ", ".join(str(req["request_id"]) for req in select_pickup_requests(x)) if select_pickup_requests(x) else "N/A")
 
         displayed_table = st.data_editor(

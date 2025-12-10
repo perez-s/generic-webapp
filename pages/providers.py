@@ -344,7 +344,7 @@ def save_file(file_uploader, file_path) -> str:
 def get_enum_values(enum_name: str):
     try:
         result = supabase.rpc('get_types', {'enum_type': f'{enum_name}'}).execute()
-        return result.data
+        return sorted(result.data)
     except Exception as e:
         print(f"Error fetching enum values: {e.message}")
 

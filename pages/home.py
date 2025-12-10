@@ -12,13 +12,13 @@ from modules.nav import MenuButtons
 
 mc.protected_content()
 
+authenticator = ss.get('authapp')
+
 if 'authentication_status' not in ss:
     st.switch_page('./pages/login_home.py')
 
 if ss["authentication_status"]:
-
     mc.logout_and_home()
-
     MenuButtons(location='home', user_roles=mc.get_roles())
 
 else:
