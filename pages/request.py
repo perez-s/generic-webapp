@@ -193,7 +193,7 @@ def display_pending_requests_table(requests_data, username):
                 "request_category": st.column_config.MultiselectColumn(
                     "Categorías de residuos",
                     options=get_enum_values("residue_type"),
-                    color=["blue", "green", "orange", "red", "purple", "brown", "gray"]
+                    color=mc.elevencolors
                 ),
                 "measure_type": "Tipo de unidad",
                 "estimated_amount": "Cantidad estimada",
@@ -253,7 +253,7 @@ def display_all_requests_table(requests_data, username):
                 "request_category": st.column_config.MultiselectColumn(
                     "Categorías de residuos",
                     options=get_enum_values("residue_type"),
-                    color=["blue", "green", "orange", "red", "purple", "brown", "gray"]
+                    color=mc.elevencolors
                 ),
                 "measure_type": "Tipo de unidad",
                 "estimated_amount": "Cantidad estimada",

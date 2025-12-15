@@ -11,6 +11,8 @@ from typing import Literal
 from streamlit.components.v1 import html
 import re
 
+elevencolors = ["blue", "green", "orange", "red", "purple", "brown", "gray", "pink", "teal", "cyan", "magenta"] 
+
 def protected_content():
     authenticator = ss.get('authapp')
     st.markdown(
@@ -136,4 +138,34 @@ def validate_residue_types(residues: list) -> bool:
     
     return True
 
-    
+def path_file(provider_nit, file_name, upload_file) -> str:
+    try:
+        ext = upload_file.type.split('/')[-1]
+        return f"uploads/{provider_nit}_{file_name}.{ext}"
+    except Exception as e:
+        st.toast(f"Error generando ruta de archivo: {e.message}")
+
+def path_files_multiple(provider_nit, file_name_prefix, upload_files) -> list:
+    """Generate paths for multiple files."""
+    try:
+        paths = []
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        for idx, upload_file in enumerate(upload_files):
+            ext = upload_file.type.split('/')[-1]
+            path = f"uploads/{provider_nit}_{file_name_prefix}_{timestamp}_{idx+1}.{ext}"
+            paths.append(path)
+        return paths
+    except Exception as e:
+        st.toast(f"Error generando rutas de archivos: {e.message}")
+        return []
+
+def save_file(file_uploader, file_path) -> str:
+    try:
+        with open(file_path, mode='wb') as w:
+            w.write(file_uploader.getvalue())
+        return file_path
+    except Exception as e:
+        st.toast(f"Error guardando archivo: {e.message}")
+
+
+

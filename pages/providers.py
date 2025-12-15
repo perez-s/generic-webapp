@@ -196,7 +196,7 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
             # Update paths and save new files if uploaded
             if lic_amb_files:
                 # Save new lic_amb files and append to existing paths
-                new_lic_amb_paths = path_files_multiple(provider_nit, "lic_amb", lic_amb_files)
+                new_lic_amb_paths = mc.path_files_multiple(provider_nit, "lic_amb", lic_amb_files)
                 
                 # Append to existing paths instead of replacing
                 if lic_amb_path_default:
@@ -207,20 +207,20 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
                 
                 lic_amb_path = ",".join(all_paths) if all_paths else ""
                 for file, path in zip(lic_amb_files, new_lic_amb_paths):
-                    save_file(file, path)
+                    mc.save_file(file, path)
             
             if rut_file:
-                rut_path = path_file(provider_nit, "rut", rut_file)
-                save_file(rut_file, rut_path)
+                rut_path = mc.path_file(provider_nit, "rut", rut_file)
+                mc.save_file(rut_file, rut_path)
             
             if ccio_file:
-                ccio_path = path_file(provider_nit, "ccio", ccio_file)
-                save_file(ccio_file, ccio_path)
+                ccio_path = mc.path_file(provider_nit, "ccio", ccio_file)
+                mc.save_file(ccio_file, ccio_path)
             
             # Handle multiple other_docs files
             if other_docs_files:
                 # Save new other_docs files and append to existing paths
-                new_other_docs_paths = path_files_multiple(provider_nit, "other_docs", other_docs_files)
+                new_other_docs_paths = mc.path_files_multiple(provider_nit, "other_docs", other_docs_files)
                 
                 # Append to existing paths instead of replacing
                 if other_docs_path_default:
@@ -231,11 +231,11 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
                 
                 other_docs_path = ",".join(all_paths) if all_paths else ""
                 for file, path in zip(other_docs_files, new_other_docs_paths):
-                    save_file(file, path)
+                    mc.save_file(file, path)
 
             if certificado_bancario_file:
-                certificado_bancario_path = path_file(provider_nit, "certificado_bancario", certificado_bancario_file)
-                save_file(certificado_bancario_file, certificado_bancario_path)
+                certificado_bancario_path = mc.path_file(provider_nit, "certificado_bancario", certificado_bancario_file)
+                mc.save_file(certificado_bancario_file, certificado_bancario_path)
             
             update_provider(id, provider_name, provider_nit, provider_email, provider_contact, provider_contact_phone, provider_website, provider_category, provider_auth_activities, lic_amb_path, rut_path, ccio_path, other_docs_path, certificado_bancario_path, now)     
 
@@ -312,35 +312,6 @@ def format_date(date_str: str) -> str:
     # Format as desired
     return date_obj.strftime("%Y %B  %d %H:%M %Z")
 
-def path_file(provider_nit, file_name, upload_file) -> str:
-    try:
-        ext = upload_file.type.split('/')[-1]
-        return f"uploads/{provider_nit}_{file_name}.{ext}"
-    except Exception as e:
-        st.error(f"Error generando ruta de archivo: {e.message}")
-
-def path_files_multiple(provider_nit, file_name_prefix, upload_files) -> list:
-    """Generate paths for multiple files."""
-    try:
-        paths = []
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        for idx, upload_file in enumerate(upload_files):
-            ext = upload_file.type.split('/')[-1]
-            path = f"uploads/{provider_nit}_{file_name_prefix}_{timestamp}_{idx+1}.{ext}"
-            paths.append(path)
-        return paths
-    except Exception as e:
-        st.error(f"Error generando rutas de archivos: {e.message}")
-        return []
-
-def save_file(file_uploader, file_path) -> str:
-    try:
-        with open(file_path, mode='wb') as w:
-            w.write(file_uploader.getvalue())
-        return file_path
-    except Exception as e:
-        st.error(f"Error guardando archivo: {e.message}")
-
 def get_enum_values(enum_name: str):
     try:
         result = supabase.rpc('get_types', {'enum_type': f'{enum_name}'}).execute()
@@ -404,19 +375,19 @@ def create_provider_dialog():
                 return
 
             # Build file paths safely
-            lic_amb_paths = path_files_multiple(provider_nit, "lic_amb", lic_amb_files)
+            lic_amb_paths = mc.path_files_multiple(provider_nit, "lic_amb", lic_amb_files)
             lic_amb_path = ",".join(lic_amb_paths) if lic_amb_paths else ""
-            rut_path = path_file(provider_nit, "rut", rut_file)
-            ccio_path = path_file(provider_nit, "ccio", ccio_file)
+            rut_path = mc.path_file(provider_nit, "rut", rut_file)
+            ccio_path = mc.path_file(provider_nit, "ccio", ccio_file)
             
             # Handle multiple other_docs files
             other_docs_paths = []
             if other_docs_files:
-                other_docs_paths = path_files_multiple(provider_nit, "other_docs", other_docs_files)
-            other_docs_path = ",".join(other_docs_paths) if other_docs_paths else ""
+                other_docs_paths = mc.path_files_multiple(provider_nit, "other_docs", other_docs_files)
+            other_docs_path = ",".join(other_docs_paths) if other_docs_paths else None
             certificado_bancario_path = ""
             if certificado_bancario_file:
-                certificado_bancario_path = path_file(provider_nit, "certificado_bancario", certificado_bancario_file)
+                certificado_bancario_path = mc.path_file(provider_nit, "certificado_bancario", certificado_bancario_file)
 
             # Persist provider record
             try:
@@ -442,19 +413,19 @@ def create_provider_dialog():
                     # Save multiple lic_amb files
                     if lic_amb_files and lic_amb_paths:
                         for file, path in zip(lic_amb_files, lic_amb_paths):
-                            save_file(file, path)
+                            mc.save_file(file, path)
                     
-                    save_file(rut_file, rut_path)
-                    save_file(ccio_file, ccio_path)
+                    mc.save_file(rut_file, rut_path)
+                    mc.save_file(ccio_file, ccio_path)
 
                     # Save multiple other_docs files
                     if other_docs_files and other_docs_paths:
                         for file, path in zip(other_docs_files, other_docs_paths):
-                            save_file(file, path)
+                            mc.save_file(file, path)
 
                     # Save certificado bancario if provided
                     if certificado_bancario_file:
-                        save_file(certificado_bancario_file, certificado_bancario_path)
+                        mc.save_file(certificado_bancario_file, certificado_bancario_path)
 
                     st.toast("✅ Proveedor creado exitosamente! ")
                     time.sleep(2)
@@ -643,7 +614,7 @@ def display_all_providers_table(providers_data):
                 "provider_category": st.column_config.MultiselectColumn(
                     "Categorías de residuos",
                     options=get_enum_values("residue_type"),
-                    color=["blue", "green", "orange", "red", "purple", "brown", "gray"]
+                    color=mc.elevencolors
                 ),
                 "created_at": st.column_config.DateColumn(
                     "Fecha de creación",
