@@ -304,17 +304,22 @@ def display_schedule_pickup_table(pickup_data):
         )
 
         selected_count = displayed_table.Seleccionar.sum()
-        cols = st.columns(2)
+        cols = st.columns(3)
         if selected_count > 0:
-            if cols[1].button("❌ Cancelar", width="stretch"):
+            if cols[2].button("❌ Cancelar", width="stretch"):
                 cancel_pickup_form(
                     pickup_ids=displayed_table[displayed_table["Seleccionar"]].index.tolist()
                 )
         if selected_count > 0 and selected_count < 2:
-            if cols[0].button("🔁 Editar", width="stretch"):
+            if cols[1].button("🔁 Editar", width="stretch"):
                 update_pickup_form(
-                    pickup_id=displayed_table[displayed_table["Seleccionar"]].index.tolist()[0]
+                    pickup_id=displayed_table[displayed_table["Seleccionar"]].index.tolist()
                 )
+            if cols[0].button("✅ Completar", width="stretch"):
+                complete_pickups(
+                    pickup_ids=displayed_table[displayed_table["Seleccionar"]].index.tolist()
+                )
+            
 
 
     except Exception as e:
@@ -456,6 +461,33 @@ def update_pickup(pickup_id: int, pickup_date: str, provider_name: str, admin_no
 
     except Exception as e:
         st.error(f"Error updating pickup: {e.message}")
+
+def complete_pickups(pickup_id: int):
+    now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
+    try:
+        ### Update pickup status to "Completada"
+        pickup = supabase.table("pickup").update({
+            "pickup_status": "Completada",
+            "updated_at": now
+        }).in_("id", pickup_id).execute()
+
+        ### Update associated requests status to "Completada"
+        for pid in pickup_id:
+            associated_requests = select_pickup_requests(pid)
+            if associated_requests:
+                request_ids = [req["request_id"] for req in associated_requests]
+                update_request_status(
+                    request_ids=request_ids,
+                    request_status="Completada"
+                )
+        
+        st.toast("✅ Recolección completada exitosamente")
+        return pickup
+
+    except Exception as e:
+        st.error(f"Error completing pickup: {e}")
+    st.rerun()
+
 
 if 'authentication_status' not in ss:
     st.switch_page('./pages/login_home.py')
