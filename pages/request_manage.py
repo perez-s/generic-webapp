@@ -509,7 +509,7 @@ def complete_pickup_form(pickup_id: int):
 
     st.write("### Adjuntar evidencia de recolección")
     cert_recoleccion_file = st.file_uploader("Sube el certificado de recolección (PDF)", type=["pdf"])
-    cert_transformacion_disposicion_files = st.file_uploader("Sube el certificado de transformación o disposición final (PDF)", type=["pdf"])
+    cert_transformacion_disposicion_files = st.file_uploader("Sube el certificado de transformación o disposición final (PDF)", type=["pdf"], accept_multiple_files=True)
     otros_documentos_files = st.file_uploader("Sube otros documentos relevantes (PDF)", type=["pdf"], accept_multiple_files=True)
 
     submitted = st.button("✅ Completar recolección")
