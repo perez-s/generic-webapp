@@ -46,6 +46,13 @@ credentials:
       name: Sedes
       password: $2b$12$SpTTS5crDcW5gqzc3UWsTen.Bg6yuRcsBSfcNo.fgAhU./XKk9DXm
       role: caracol_users
+    sostenibilidad:
+      email: wero@gmail.com
+      failed_login_attempts: 0
+      logged_in: true
+      name: Sostenibilidad
+      password: $2b$12$Yjz8uCtowWH4xAqBng/lIOaLGB6S8OYlecyAeGqdcnpkTAgFMjT42
+      role: caracol_users
     ti:
       email: wero@gmail.com
       failed_login_attempts: 0

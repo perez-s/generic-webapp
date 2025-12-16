@@ -496,9 +496,6 @@ def complete_pickup_form(pickup_id: int):
         request_ids=[req["request_id"] for req in select_pickup_requests(pickup_id)]
     )
 
-    records = displayed_table.reset_index().to_dict('records')
-    st.write(records)
-
     st.divider()
 
     st.write("### Adjuntar evidencia de recolección")
