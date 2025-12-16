@@ -331,6 +331,7 @@ def display_all_pickup_table(pickup_data):
         rows["created_at"] = pd.to_datetime(rows["created_at"])
         rows["updated_at"] = pd.to_datetime(rows["updated_at"])
         rows.set_index("id", inplace=True)
+        rows["Seleccionar"] = False
         rows["request_ids"] = rows.index.map(lambda x: ", ".join(str(req["request_id"]) for req in select_pickup_requests(x)) if select_pickup_requests(x) else "N/A")
 
         displayed_table = st.data_editor(
@@ -364,6 +365,14 @@ def display_all_pickup_table(pickup_data):
                 )
             }
         )
+
+        selected_count = displayed_table.Seleccionar.sum()
+        cols = st.columns(3)
+        if selected_count > 0 and selected_count < 2:
+            if cols[1].button("👁️ Consultar", width="stretch"):
+                pickup_detail_view(
+                    pickup_id=displayed_table[displayed_table["Seleccionar"]].index.tolist()[0]
+                )       
 
     except Exception as e:
             st.info("📭 No hay recolecciones disponibles aún. Programa una desde la pestaña de solicitudes pendientes.")
@@ -492,7 +501,7 @@ def complete_pickup(pickup_id: int, cert_recoleccion_path: str, cert_transformac
 @st.dialog("Completar recolección", width="medium")
 def complete_pickup_form(pickup_id: int):
     st.write("### Residuos recolectados")
-    displayed_table = display_real_ammount_table(
+    displayed_table = display_ask_real_ammount_table(
         request_ids=[req["request_id"] for req in select_pickup_requests(pickup_id)]
     )
 
@@ -551,7 +560,7 @@ def complete_pickup_form(pickup_id: int):
             st.toast(f"❌ Error al completar la recolección: {e}")
             return
 
-def display_real_ammount_table(request_ids: list):
+def display_ask_real_ammount_table(request_ids: list):
     try:
         df = pd.DataFrame(list_all_requests())
         df = df[df["id"].isin(request_ids)]
@@ -605,6 +614,121 @@ def insert_residues_collected(df: pd.DataFrame, pickup_id: int):
         return insert
     except Exception as e:
         st.toast(f"Error inserting residues collected: {e}")
+
+@st.dialog("📋 Detalle de la recolección", width="large")
+def pickup_detail_view(pickup_id: int):
+    """Display detailed view of a pickup with all information and downloadable files."""
+    try:
+        pickup = select_pickup(pickup_id)
+        if not pickup:
+            st.error("No se pudo cargar la información de la recolección.")
+            return
+        
+        st.write("### Materiales recolectados")
+        
+        display_real_ammount_table(pickup_id)
+        
+        st.divider()
+        st.write("### Documentos de soporte de la recolección")
+
+        st.markdown("**Certificado de recolección**")
+        certificado_recoleccion_path = pickup.get('cert_recoleccion_path', '')
+        if certificado_recoleccion_path and os.path.exists(certificado_recoleccion_path):
+            with st.expander("📄 Ver Certificado de recolección"):
+                try:
+                    with open(certificado_recoleccion_path, "rb") as pdf_file:
+                        pdf_data = pdf_file.read()
+                        st.pdf(pdf_data, key="view_certificado_recoleccion_pdf")
+                except Exception as e:
+                    st.error(f"Error cargando PDF: {e.message}")
+                    st.markdown("**Certificado de recolección**")
+
+        st.markdown("**Certificado de transformación**")            
+        certificado_transformacion_path = pickup.get('cert_transformacion_path', '')
+        if certificado_transformacion_path and os.path.exists(certificado_transformacion_path):
+            with st.expander("📄 Ver Certificado de transformación"):
+                try:
+                    with open(certificado_transformacion_path, "rb") as pdf_file:
+                        pdf_data = pdf_file.read()
+                        st.pdf(pdf_data, key="view_certificado_transformacion_pdf")
+                except Exception as e:
+                    st.error(f"Error cargando PDF: {e.message}")
+        else:
+            st.caption("No hay archivo disponible")
+
+        st.markdown("**Otros documentos relevantes**")
+        with st.expander("📄 Otros documentos relevantes", expanded=False):
+            otros_documentos_path = pickup.get('otros_documentos_path', '')
+            if otros_documentos_path:
+                otros_documentos_list = [p.strip() for p in otros_documentos_path.split(",") if p.strip()]
+                if otros_documentos_list:
+                    has_files = False
+                    for idx, doc_path in enumerate(otros_documentos_list):
+                        if os.path.exists(doc_path):
+                            has_files = True
+                            with st.expander(f"📄 Ver Documento {idx+1}"):
+                                try:
+                                    with open(doc_path, "rb") as pdf_file:
+                                        pdf_data = pdf_file.read()
+                                        st.pdf(pdf_data, key=f"view_documento_pdf_{idx}")
+                                except Exception as e:
+                                    st.error(f"Error cargando PDF: {e.message}")
+                    if not has_files:
+                        st.caption("No hay archivos disponibles")
+                else:
+                    st.caption("No hay archivos disponibles")
+            else:
+                st.caption("No hay archivos disponibles")
+
+    except Exception as e:
+        st.error(f"Error cargando detalles de la recolección: {e.message}")
+
+def select_pickup(pickup_id: int):
+    try:
+        request = supabase.table("pickup").select(
+            "*"
+        ).eq("id", pickup_id).execute()
+        return request.data[0] if request.data else None
+    except Exception as e:
+        st.error(f"Error fetching pickup: {e.message}")
+        return None
+
+def display_real_ammount_table(pickup_id: int):
+    try:
+        residues = supabase.table("residues_collected").select(
+            "request_category, measure_type, real_ammount"
+        ).eq("pickup_id", pickup_id).execute()
+        rows = pd.DataFrame(residues.data)
+        if rows.empty:
+            st.info("📭 No hay materiales recolectados registrados para esta recolección.")
+            return
+
+        displayed_table = st.data_editor(
+            rows,
+            width="stretch",
+            disabled=["request_category", "measure_type", "real_ammount"],
+            hide_index=True, 
+            column_config={
+                "request_category": st.column_config.MultiselectColumn(
+                    "Categorías de residuos",
+                    options=get_enum_values("residue_type"),
+                    color=mc.elevencolors
+                ),
+                "measure_type": "Tipo de unidad",
+                "real_ammount": "Cantidad recolectada"
+            }
+        )
+    except Exception as e:
+            st.write(f"No hay materiales recolectados disponibles [{e}]")
+
+
+
+
+
+
+
+
+
 
 
 if 'authentication_status' not in ss:
