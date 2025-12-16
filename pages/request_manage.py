@@ -640,7 +640,7 @@ def pickup_detail_view(pickup_id: int):
                         pdf_data = pdf_file.read()
                         st.pdf(pdf_data, key="view_certificado_recoleccion_pdf")
                 except Exception as e:
-                    st.error(f"Error cargando PDF: {e.message}")
+                    st.error(f"Error cargando PDF: {e}")
                     st.markdown("**Certificado de recolección**")
 
         st.markdown("**Certificado de transformación**")            
@@ -652,7 +652,7 @@ def pickup_detail_view(pickup_id: int):
                         pdf_data = pdf_file.read()
                         st.pdf(pdf_data, key="view_certificado_transformacion_pdf")
                 except Exception as e:
-                    st.error(f"Error cargando PDF: {e.message}")
+                    st.error(f"Error cargando PDF: {e}")
         else:
             st.caption("No hay archivo disponible")
 
@@ -672,7 +672,7 @@ def pickup_detail_view(pickup_id: int):
                                         pdf_data = pdf_file.read()
                                         st.pdf(pdf_data, key=f"view_documento_pdf_{idx}")
                                 except Exception as e:
-                                    st.error(f"Error cargando PDF: {e.message}")
+                                    st.error(f"Error cargando PDF: {e}")
                     if not has_files:
                         st.caption("No hay archivos disponibles")
                 else:
