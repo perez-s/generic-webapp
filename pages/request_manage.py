@@ -509,7 +509,7 @@ def complete_pickup_form(pickup_id: int):
 
     st.write("### Adjuntar evidencia de recolección")
     cert_recoleccion_file = st.file_uploader("Sube el certificado de recolección (PDF)", type=["pdf"])
-    cert_transformacion_disposicion_file = st.file_uploader("Sube el certificado de transformación o disposición final (PDF)", type=["pdf"])
+    cert_transformacion_disposicion_files = st.file_uploader("Sube el certificado de transformación o disposición final (PDF)", type=["pdf"])
     otros_documentos_files = st.file_uploader("Sube otros documentos relevantes (PDF)", type=["pdf"], accept_multiple_files=True)
 
     submitted = st.button("✅ Completar recolección")
@@ -517,7 +517,7 @@ def complete_pickup_form(pickup_id: int):
         missing = []
         if not cert_recoleccion_file:
             missing.append("Certificado de recolección")
-        if not cert_transformacion_disposicion_file:
+        if not cert_transformacion_disposicion_files:
             missing.append("Certificado de transformación o disposición final")
         if missing:
             st.toast(f"Por favor, sube los siguientes documentos obligatorios: {', '.join(missing)}", icon="❌")
@@ -526,8 +526,14 @@ def complete_pickup_form(pickup_id: int):
         if zero_values.any():
             st.toast("Por favor, ingresa cantidades reales mayores a cero para todos los tipos de residuos recolectados.", icon="❌")
             return
+        
         cert_recoleccion_path = mc.path_file(pickup_id, "certificado_recoleccion", cert_recoleccion_file)
-        cert_transformacion_disposicion_path = mc.path_file(pickup_id, "certificado_transformacion_disposicion", cert_transformacion_disposicion_file)
+        
+        cert_transformacion_disposicion_paths = []
+        if cert_transformacion_disposicion_files:
+            cert_transformacion_disposicion_paths = mc.path_files_multiple(pickup_id, "certificado_transformacion_disposicion", cert_transformacion_disposicion_files)
+        cert_transformacion_disposicion_path = ", ".join(cert_transformacion_disposicion_paths) if cert_transformacion_disposicion_paths else None        
+
         otros_documentos_paths = []
         if otros_documentos_files:
             otros_documentos_paths = mc.path_files_multiple(pickup_id, "otros_documentos", otros_documentos_files)
@@ -536,7 +542,9 @@ def complete_pickup_form(pickup_id: int):
 
         try:    
             mc.save_file(cert_recoleccion_file, cert_recoleccion_path)
-            mc.save_file(cert_transformacion_disposicion_file, cert_transformacion_disposicion_path)
+            if cert_transformacion_disposicion_files and cert_transformacion_disposicion_paths:
+                for file_uploader, file_path in zip(cert_transformacion_disposicion_files, cert_transformacion_disposicion_paths):
+                    mc.save_file(file_uploader, file_path)
             if otros_documentos_files and otros_documentos_paths:
                 for file_uploader, file_path in zip(otros_documentos_files, otros_documentos_paths):
                     mc.save_file(file_uploader, file_path)
@@ -642,19 +650,30 @@ def pickup_detail_view(pickup_id: int):
                 except Exception as e:
                     st.error(f"Error cargando PDF: {e}")
                     st.markdown("**Certificado de recolección**")
-
-        st.markdown("**Certificado de transformación**")            
-        certificado_transformacion_path = pickup.get('cert_transformacion_path', '')
-        if certificado_transformacion_path and os.path.exists(certificado_transformacion_path):
-            with st.expander("📄 Ver Certificado de transformación"):
-                try:
-                    with open(certificado_transformacion_path, "rb") as pdf_file:
-                        pdf_data = pdf_file.read()
-                        st.pdf(pdf_data, key="view_certificado_transformacion_pdf")
-                except Exception as e:
-                    st.error(f"Error cargando PDF: {e}")
-        else:
-            st.caption("No hay archivo disponible")
+        
+        st.markdown("**Certificados de transformación**")
+        with st.expander("📄 Ver certificados de transformación", expanded=False):
+            otros_documentos_path = pickup.get('cert_transformacion_path', '')
+            if otros_documentos_path:
+                otros_documentos_list = [p.strip() for p in otros_documentos_path.split(",") if p.strip()]
+                if otros_documentos_list:
+                    has_files = False
+                    for idx, doc_path in enumerate(otros_documentos_list):
+                        if os.path.exists(doc_path):
+                            has_files = True
+                            with st.expander(f"📄 Ver Documento {idx+1}"):
+                                try:
+                                    with open(doc_path, "rb") as pdf_file:
+                                        pdf_data = pdf_file.read()
+                                        st.pdf(pdf_data, key=f"view_certificado_transformacion_pdf_{idx}")
+                                except Exception as e:
+                                    st.error(f"Error cargando PDF: {e}")
+                    if not has_files:
+                        st.caption("No hay archivos disponibles")
+                else:
+                    st.caption("No hay archivos disponibles")
+            else:
+                st.caption("No hay archivos disponibles")
 
         st.markdown("**Otros documentos relevantes**")
         with st.expander("📄 Otros documentos relevantes", expanded=False):
