@@ -681,7 +681,7 @@ def pickup_detail_view(pickup_id: int):
                 st.caption("No hay archivos disponibles")
 
     except Exception as e:
-        st.error(f"Error cargando detalles de la recolección: {e.message}")
+        st.error(f"Error cargando detalles de la recolección: {e}")
 
 def select_pickup(pickup_id: int):
     try:
