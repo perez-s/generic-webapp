@@ -180,6 +180,7 @@ def schedule_request_form(ids: list):
                 pickup_date=pickup_date.isoformat(),
                 admin_note=admin_note
             )
+            mc.send_email(to_email=[ss["email"],mc.get_email().get('sostenibilidad')], operation='Creation', supabase_return=request.data[0])
             create_pickup_requests(
                 request_ids=ids,
                 pickup_id=request.data[0]["id"]
@@ -403,7 +404,7 @@ def cancel_pickups(pickup_ids: list, admin_note: str = None):
             "admin_note": admin_note,
             "updated_at": now
         }).in_("id", pickup_ids).execute()
-
+        mc.send_email(to_email=[ss["email"],mc.get_email().get('sostenibilidad')], operation='Creation', supabase_return=pickup.data[0])
         ### Update associated requests status to "Pendiente"
         for pickup_id in pickup_ids:
             associated_requests = select_pickup_requests(pickup_id)
@@ -463,6 +464,7 @@ def update_pickup(pickup_id: int, pickup_date: str, provider_name: str, admin_no
             "admin_note": admin_note,
             "updated_at": now
         }).eq("id", pickup_id).execute()
+        mc.send_email(to_email=[ss["email"],mc.get_email().get('sostenibilidad')], operation='Creation', supabase_return=pickup.data[0])
         st.toast("✅ Recolección actualizada exitosamente")
         st.rerun()
         return pickup

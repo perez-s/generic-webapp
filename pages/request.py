@@ -66,6 +66,7 @@ def update_request(request_id: int, request_category:list, measure_type: str, es
         }).eq("id", request_id).execute()
         st.toast("✅ Solicitud actualizada exitosamente")
         st.rerun()
+        mc.send_email(to_email=[ss["email"],mc.get_email().get('sostenibilidad')], operation='Creation', supabase_return=request.data[0])
         return request
 
     except Exception as e:
@@ -122,6 +123,7 @@ def create_request(username: str, request_category:list, measure_type: str, esti
             "created_at": now,
             "updated_at": now
         }).execute()
+        mc.send_email(to_email=[ss["email"],mc.get_email().get('sostenibilidad')], operation='Creation', supabase_return=request.data[0])
         st.toast("✅ Solicitud creada exitosamente")
         st.rerun()
         return request

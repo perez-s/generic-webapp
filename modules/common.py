@@ -10,8 +10,14 @@ from datetime import datetime, timezone, timedelta
 from typing import Literal
 from streamlit.components.v1 import html
 import re
+import os
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from datetime import datetime, date
 
 elevencolors = ["blue", "green", "orange", "red", "purple", "brown", "gray", "pink", "teal", "cyan", "magenta"] 
+email_password = os.getenv('EMAIL_PASSWORD')  
 
 def protected_content():
     authenticator = ss.get('authapp')
@@ -71,8 +77,21 @@ def get_roles():
         cred = config['credentials']
     else:
         cred = {}
-
+    
     return {username: user_info['role'] for username, user_info in cred['usernames'].items() if 'role' in user_info}
+
+def get_email():
+    """Gets email based on config file."""
+    CONFIG_FILENAME = 'config.yaml'
+    with open(CONFIG_FILENAME) as file:
+        config = yaml.load(file, Loader=SafeLoader)
+
+    if config is not None:
+        cred = config['credentials']
+    else:
+        cred = {}
+
+    return {username: user_info['email'] for username, user_info in cred['usernames'].items() if 'email' in user_info}
 
 def validate_email(email: str) -> bool:
     """Validates an email address format."""
@@ -166,6 +185,28 @@ def save_file(file_uploader, file_path) -> str:
         return file_path
     except Exception as e:
         st.toast(f"Error guardando archivo: {e.message}")
+    
+def send_email(to_email: list, operation: Literal['Creation', 'Schedule', 'Cancelled'], supabase_return: dict):
+    sender_email = 'no-reply@mywero.com.co'
+    if operation == 'Creation':
+        subject = f'Solicitud No. {supabase_return.get("id")} creada exitosamente'
+        created_at = datetime.fromisoformat(supabase_return.get("created_at").replace('Z', '+00:00'))
+        txt_content = open('./resources/success_email.txt').read().format(id=supabase_return.get("id"), date=created_at.strftime("%Y-%m-%d %H:%M:%S"), residues=', '.join(supabase_return.get("request_category", [])))
+        html_content0 = open('./resources/success_email.html').read()
+        html_content = html_content0.replace('{id:}', str(supabase_return.get("id"))).replace('{date:}', created_at.strftime("%Y-%m-%d %H:%M:%S")).replace('{residues:}', ', '.join(supabase_return.get("request_category", [])))
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = subject
+    msg['From'] = sender_email
+    msg['To'] = ", ".join(to_email)
+    msg.attach(MIMEText(txt_content, 'plain'))
+    msg.attach(MIMEText(html_content, 'html'))
+    # Send the message via our own SMTP server, but don't include the
 
-
+    # envelope header.
+    try:
+        with smtplib.SMTP_SSL('mail.mywero.com.co', 465) as server:
+            server.login(sender_email, email_password)
+            server.send_message(msg)
+    except Exception as e:
+        st.toast(f"Error enviando correo electrónico: {e}", icon="❌")
 
