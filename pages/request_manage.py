@@ -742,16 +742,6 @@ def display_real_ammount_table(pickup_id: int):
     except Exception as e:
             st.write(f"No hay materiales recolectados disponibles [{e}]")
 
-
-
-
-
-
-
-
-
-
-
 if 'authentication_status' not in ss:
     st.switch_page('./pages/login_home.py')
 
