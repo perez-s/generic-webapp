@@ -23,6 +23,25 @@ supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(supabase_url, supabase_key)
 
+def translate_categories(categories):
+    translation_map = {
+        "Aceites usados": "Y9-Aceite usado",
+        "Aerosoles": "Y12-Aerosoles",
+        "Baterías": "Y31-Baterías plomo ácido",
+        "Baterías de ion litio": "Z-Baterías de ion litio",
+        "Biosanitarios": "Y1-Biosanitarios",
+        "Luminarias": "Y29-Bombillos, tubos y lámparas",
+        "Pilas": "Y23-Pilas y baterías",
+        "Pinturas": "Y12-Pinturas",
+        "RAEE": "A1180-Aparatos eléctricos y electrónicos",
+        "Sólidos con aceite": "Y9-Sólidos contaminados con aceite",
+        "Tóneres": "Y12-Tóneres",
+        "Otros peligrosos": "Z-Otros peligrosos"
+    }
+    reverse_map = {v: k for k, v in translation_map.items()}
+    combined_map = {**translation_map, **reverse_map}
+    return [combined_map.get(category, category) for category in categories]
+
 def get_providers():
     try:
         providers = supabase.table("providers").select("provider_name").eq("provider_is_active", True).execute()
@@ -579,6 +598,7 @@ def display_ask_real_ammount_table(request_ids: list):
         df.sort_values(by="request_category", inplace=True)
         df["measure_type"] = df["request_category"].apply(lambda x: "m3" if x in ["Sólidos con aceite", "Aceites usados"] else "kg")
         df["real_ammount"] = 0
+        df["request_category"] = df["request_category"].apply(lambda x: translate_categories([x])[0])
         df.set_index("request_category", inplace=True)
         real_ammount_table = st.data_editor(
             df,
@@ -589,8 +609,8 @@ def display_ask_real_ammount_table(request_ids: list):
             column_config={
                 "request_category": st.column_config.SelectboxColumn(
                     "Categorías de residuos",
-                    options=get_enum_values("residue_type"),
-                    default="Aceites usados",
+                    options=sorted(translate_categories(get_enum_values("residue_type"))),
+                    default=translate_categories(["Aceites usados"])[0],
                     required=True
                 ),
                 "measure_type": st.column_config.SelectboxColumn(
@@ -614,6 +634,7 @@ def display_ask_real_ammount_table(request_ids: list):
 
 def insert_residues_collected(df: pd.DataFrame, pickup_id: int):
     try:
+        df["request_category"] = df["request_category"].apply(lambda x: translate_categories([x])[0])
         records = df.reset_index().to_dict('records')
         print(f'Step 1: Records to insert: {records}')
         for record in records:
