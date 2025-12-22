@@ -442,6 +442,14 @@ def provider_detail_view(provider_id: int):
             st.error("No se pudo cargar la información del proveedor")
             return
         
+        # Fetch associated allies
+        try:
+            allies = supabase.table("allies").select("*").eq("provider_id", provider_id).execute()
+            allies_data = allies.data if allies.data else []
+        except Exception as e:
+            st.warning(f"No se pudieron cargar los aliados: {e}")
+            allies_data = []
+        
         # Provider information and services section
         with st.expander("ℹ️ Información general y servicios", expanded=True):
             col1, col2 = st.columns(2)
@@ -583,6 +591,41 @@ def provider_detail_view(provider_id: int):
                         st.caption("No hay archivos disponibles")
                 else:
                     st.caption("No hay archivos disponibles")
+        
+        # Allies section
+        with st.expander(f"🤝 Aliados asociados ({len(allies_data)})", expanded=False):
+            if allies_data:
+                for ally in allies_data:
+                    ally_name = ally.get('ally_name', 'N/A')
+                    ally_file_path = ally.get('lic_amb_path', '')
+                    
+                    with st.container():
+                        st.markdown(f"**{ally_name}**")
+                        
+                        if ally_file_path:
+                            ally_file_list = [p.strip() for p in ally_file_path.split(",") if p.strip()]
+                            if ally_file_list:
+                                has_files = False
+                                for idx, doc_path in enumerate(ally_file_list):
+                                    if os.path.exists(doc_path):
+                                        has_files = True
+                                        with st.expander(f"📄 Ver Licencia {idx+1}"):
+                                            try:
+                                                with open(doc_path, "rb") as pdf_file:
+                                                    pdf_data = pdf_file.read()
+                                                    st.pdf(pdf_data, key=f"view_ally_pdf_{ally['id']}_{idx}")
+                                            except Exception as e:
+                                                st.error(f"Error cargando PDF: {e}")
+                                if not has_files:
+                                    st.caption("No hay archivos disponibles")
+                            else:
+                                st.caption("No hay archivos disponibles")
+                        else:
+                            st.caption("No hay archivos disponibles")
+                        
+                        st.divider()
+            else:
+                st.info("No hay aliados asociados a este proveedor")
     
     except Exception as e:
         st.error(f"Error cargando detalles del proveedor: {e.message}")
@@ -632,7 +675,7 @@ def display_all_providers_table(providers_data):
             }
         )
         selected_count = displayed_table.Seleccionar.sum()
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
         if selected_count > 0 and selected_count < 2:
             selected_id = displayed_table[displayed_table["Seleccionar"]].index.tolist()[0]
             
@@ -658,6 +701,9 @@ def display_all_providers_table(providers_data):
                         other_docs_path_default=default_options["other_docs_path"],
                         provider_website_default=default_options["provider_website"]
                     )
+            with col4:
+                if st.button("➕ Crear aliado", width="stretch"):
+                    create_ally_dialog(selected_id)
         if selected_count > 0 or selected_count >= 2:
             with col3:
                 if st.button("🗑️ Eliminar proveedor/es", width="stretch"):
@@ -665,15 +711,53 @@ def display_all_providers_table(providers_data):
     except Exception as e:
         st.write(f"No hay proveedores disponibles aun")
 
-# @st.dialog("PDF Viewer", width="large")
-# def pdf_viewer_dialog(pdf_path: str):
-#     """Dialog to display a PDF file."""
-#     try:
-#         with open(pdf_path, "rb") as pdf_file:
-#             PDFbyte = pdf_file.read()
-#             st.pdf(PDFbyte)
-#     except Exception as e:
-#         st.error(f"Error loading PDF: {e.message}")
+def create_ally(provider_id: int, ally_name: str, ally_file_path: str):
+    now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
+    try:
+        request = supabase.table("allies").insert({
+            "provider_id": provider_id,
+            "ally_name": ally_name,
+            "lic_amb_path": ally_file_path,
+            "created_at": now
+        }).execute()
+        return request
+
+    except Exception as e:
+        st.error(f"Error creando aliado: {e}")
+
+@st.dialog("Crear aliado para proveedor", width="medium")
+def create_ally_dialog(provider_id: int):
+    ally_form = st.form("ally_form")
+    with ally_form:
+        ally_name = st.text_input("Nombre del aliado")
+        ally_files = st.file_uploader("Licencias ambientales (múltiples archivos permitidos)", type=["pdf"], accept_multiple_files=True)
+        submitted = st.form_submit_button("Crear aliado")
+        if submitted:
+            if not ally_files:
+                st.error("Por favor, sube al menos un archivo para el aliado.")
+                return
+            
+            # Build file paths for multiple files
+            ally_file_paths = mc.path_files_multiple(provider_id, ally_name, ally_files)
+            ally_file_path = ",".join(ally_file_paths) if ally_file_paths else ""
+            
+            try:
+                result = create_ally(
+                    provider_id,
+                    ally_name,
+                    ally_file_path
+                )
+                
+                # Only save files if database insertion succeeded
+                if result:
+                    for file, path in zip(ally_files, ally_file_paths):
+                        mc.save_file(file, path)
+                    st.toast("✅ Aliado creado exitosamente! ")
+                    time.sleep(2)
+                    st.rerun()
+            except Exception as e:
+                st.toast(f"❌ Error al crear aliado: {e}")
+
 
 ### Page layout and logic ###
 mc.protected_content()
