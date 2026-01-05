@@ -525,7 +525,7 @@ def update_pickup_form(pickup_id: int):
         admin_note = st.text_area("Nota del administrador (opcional)")
         submitted = st.form_submit_button("Actualizar recolección")
         if submitted:
-            update_pickup(
+            pickup = update_pickup(
                 pickup_id=pickup_id,
                 pickup_date=pickup_date.isoformat(),
                 provider_name=provider_name,
