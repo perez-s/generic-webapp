@@ -1,0 +1,17 @@
+Recolección programada exitosamente!
+
+Estimado colaborador.
+
+
+Su solicitud para la recolección de residuos ha sido programada exitosamente. A continuación, se comparten los detalles de la solicitud programada.
+
+    Número de solicitudes asociadas: {id}
+    Fecha de recolección programada: {pickup_date}
+    Estado actual: Programada
+
+Recuerde que los residuos deben estar debidamente empacados (si aplica) y etiquetados de acuerdo con las instrucciones y capacitaciones realizadas por el área de Responsabilidad Corporativa y Sostenibilidad, y estar disponibles en la fecha programada.
+
+Una vez la recolección haya sido realizada, el estado de la solicitud será actualizado en la plataforma.
+
+
+Saludos.

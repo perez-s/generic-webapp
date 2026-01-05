@@ -51,8 +51,10 @@ def update_request_form(id:int, request_category_default:list, measure_type_defa
         details = st.text_area("Comentarios", value=details_default)
         submitted = st.form_submit_button("Enviar solicitud")
         if submitted:
-            update_request(id, request_category, measure_type, estimated_amount, details)           
-
+            request = update_request(id, request_category, measure_type, estimated_amount, details)
+            mc.send_email(to_email=[ss["email"],mc.get_email().get('sostenibilidad')], operation='Update', supabase_return=request.data[0]),           
+            st.toast("✅ Solicitud actualizada exitosamente")
+            st.rerun()
 def update_request(request_id: int, request_category:list, measure_type: str, estimated_amount: float,details: str):
     now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
     print(now)
@@ -64,9 +66,6 @@ def update_request(request_id: int, request_category:list, measure_type: str, es
             "details": details,
             "updated_at": now
         }).eq("id", request_id).execute()
-        st.toast("✅ Solicitud actualizada exitosamente")
-        st.rerun()
-        mc.send_email(to_email=[ss["email"],mc.get_email().get('sostenibilidad')], operation='Creation', supabase_return=request.data[0])
         return request
 
     except Exception as e:
@@ -167,7 +166,7 @@ def create_request_form():
         if submitted:
             if mc.validate_residue_types(request_category) == False:
                 return
-            username = f"{ss["name"]}"
+            username = f"{ss["username"]}"
             try:        
                 create_request(username, request_category, measure_type, estimated_amount, details)
             except Exception as e:
@@ -313,11 +312,12 @@ if ss["authentication_status"]:
     create_request_button()
 
     st.divider()
+    all_requests = list_all_requests()
     tab1, tab2 = st.tabs(["📄 Solicitudes pendientes", "📊 Todas las solicitudes"])
     with tab1:
-        display_pending_requests_table(list_all_requests(), ss["name"])
+        display_pending_requests_table(all_requests, ss["username"])
     with tab2:
-        display_all_requests_table(list_all_requests(), ss["name"])
+        display_all_requests_table(all_requests, ss["username"])
 
 else:
     st.switch_page("./pages/login_home.py")

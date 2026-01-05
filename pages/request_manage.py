@@ -14,7 +14,9 @@ from datetime import datetime, timezone, timedelta
 import os
 import locale
 import pandas as pd
-
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
 
 # Cargar variables de entorno y configurar Supabase
@@ -22,6 +24,20 @@ load_dotenv()
 supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(supabase_url, supabase_key)
+
+def get_pickup_date_by_request_id(pickup_id: int):
+    try:
+        # Join pickup_requests with pickup table
+        result = supabase.table("pickup").select(
+            "id, pickup_date, admin_note, pickup_requests(request_id)"
+        ).eq("id", pickup_id).execute()
+        
+        if result.data and len(result.data) > 0:
+            return result.data[0]
+        return None
+    except Exception as e:
+        st.error(f"Error fetching pickup date: {e.message}")
+        return None
 
 def translate_categories(categories):
     translation_map = {
@@ -96,11 +112,13 @@ def display_pending_requests_table(requests_data):
                 )
             }
         )
-        selected_count = displayed_table.Seleccionar.sum()
+        selected_rows = displayed_table[displayed_table["Seleccionar"]]
+        selected_count = len(selected_rows)
         if selected_count > 0:
             if st.button("🗓️ Agendar solicitud", width="stretch"):
                 schedule_request_form(
-                    ids=displayed_table[displayed_table["Seleccionar"]].index.tolist()
+                    ids=selected_rows.index.tolist(),
+                    all_requests=requests_data
                 )
     except Exception as e:
             st.write(f"No hay solicitudes pendientes disponibles") 
@@ -159,8 +177,14 @@ def get_enum_values(enum_name: str):
         print(f"Error fetching enum values: {e.message}")
 
 @st.dialog("Programar solicitudes", width="large")
-def schedule_request_form(ids: list):
+def schedule_request_form(ids: list, all_requests):
     providers = get_providers()
+    request_usernames = list(set([select_request(rid)["username"] for rid in ids]))
+    emails = []
+    for username in request_usernames:
+        email = mc.get_email().get(username)
+        emails.append(email)
+
     request_form = st.form("request_form")
     with request_form:
         cols = st.columns([1,2])
@@ -172,7 +196,7 @@ def schedule_request_form(ids: list):
             submitted = st.form_submit_button("Programar solicitud")
         with cols[1]:
             st.write("### Solicitudes seleccionadas:")
-            df = pd.DataFrame(list_all_requests())
+            df = pd.DataFrame(all_requests)
             df = df[df["id"].isin(ids)]
             df.set_index("id", inplace=True)
             st.dataframe(
@@ -190,26 +214,27 @@ def schedule_request_form(ids: list):
                 }
                 )
 
+
         if submitted:
             if admin_note == "":
                 admin_note = None
-            request = create_pickup(
-                username=f"{ss["name"]}",
-                provider_name=provider_name,
-                pickup_date=pickup_date.isoformat(),
-                admin_note=admin_note
-            )
-            mc.send_email(to_email=[ss["email"],mc.get_email().get('sostenibilidad')], operation='Creation', supabase_return=request.data[0])
-            create_pickup_requests(
-                request_ids=ids,
-                pickup_id=request.data[0]["id"]
-            )
-            update_request_status(
-                request_ids=ids,
-                request_status="Programada",
-                admin_note=admin_note
-            )
-
+            with st.spinner("⏳ Programando solicitudes..."):
+                pickup = create_pickup(
+                    username=f"{ss["username"]}",
+                    provider_name=provider_name,
+                    pickup_date=pickup_date.isoformat(),
+                    admin_note=admin_note
+                )
+                pickup_requests = create_pickup_requests(
+                    request_ids=ids,
+                    pickup_id=pickup.data[0]["id"]
+                )
+                request = update_request_status(
+                    request_ids=ids,
+                    request_status="Programada",
+                    admin_note=admin_note
+                )
+                mc.send_email(supabase_return=get_pickup_date_by_request_id(pickup.data[0]["id"]), to_email=[mc.get_email().get('sostenibilidad')] + emails, operation='Schedule')
             st.toast("✅ Solicitudes programadas exitosamente")
             st.rerun()
 
@@ -221,8 +246,6 @@ def update_request_status(request_ids: list, request_status: str, admin_note: st
             "admin_note": admin_note,
             "updated_at": now
         }).in_("id", request_ids).execute()
-        st.toast("✅ Solicitud actualizada exitosamente")
-        st.rerun()
         return request
 
     except Exception as e:
@@ -286,8 +309,22 @@ def display_schedule_pickup_table(pickup_data):
         rows = rows[rows["pickup_status"] == "Programada"]
         rows.set_index("id", inplace=True)
         rows["Seleccionar"] = False
-        rows["request_ids"] = rows.index.map(lambda x: ", ".join(str(req["request_id"]) for req in select_pickup_requests(x)) if select_pickup_requests(x) else "N/A")
 
+        # Fetch all pickup requests for the displayed pickups in a single query
+        pickup_ids = rows.index.tolist()
+        pickup_requests_by_pickup_id = {}
+        if pickup_ids:
+            response = supabase.table("pickup_requests").select("pickup_id, request_id").in_("pickup_id", pickup_ids).execute()
+            data = getattr(response, "data", None) or response.get("data", [])
+            for record in data:
+                pickup_id = record.get("pickup_id")
+                request_id = record.get("request_id")
+                if pickup_id is not None and request_id is not None:
+                    pickup_requests_by_pickup_id.setdefault(pickup_id, []).append(request_id)
+
+        rows["request_ids"] = rows.index.map(
+            lambda x: ", ".join(str(req_id) for req_id in pickup_requests_by_pickup_id.get(x, [])) or "N/A"
+        )
         if rows.empty:
             st.info("📭 No hay recolecciones programadas aún. Programa una desde la pestaña de solicitudes pendientes.")
             return
@@ -339,8 +376,6 @@ def display_schedule_pickup_table(pickup_data):
                 complete_pickup_form(
                     pickup_id=displayed_table[displayed_table["Seleccionar"]].index.tolist()[0]
                 )            
-
-
     except Exception as e:
             st.error("❌ Error al cargar las recolecciones programadas.")
 
@@ -352,7 +387,21 @@ def display_all_pickup_table(pickup_data):
         rows["updated_at"] = pd.to_datetime(rows["updated_at"])
         rows.set_index("id", inplace=True)
         rows["Seleccionar"] = False
-        rows["request_ids"] = rows.index.map(lambda x: ", ".join(str(req["request_id"]) for req in select_pickup_requests(x)) if select_pickup_requests(x) else "N/A")
+        pickup_ids = rows.index.tolist()
+        pickup_requests_by_pickup_id = {}
+        if pickup_ids:
+            response = supabase.table("pickup_requests").select("pickup_id, request_id").in_("pickup_id", pickup_ids).execute()
+            data = getattr(response, "data", None) or response.get("data", [])
+            for record in data:
+                pickup_id = record.get("pickup_id")
+                request_id = record.get("request_id")
+                if pickup_id is not None and request_id is not None:
+                    pickup_requests_by_pickup_id.setdefault(pickup_id, []).append(request_id)
+
+        rows["request_ids"] = rows.index.map(
+            lambda x: ", ".join(str(req_id) for req_id in pickup_requests_by_pickup_id.get(x, [])) or "N/A"
+        )
+
 
         displayed_table = st.data_editor(
             rows,
@@ -423,7 +472,6 @@ def cancel_pickups(pickup_ids: list, admin_note: str = None):
             "admin_note": admin_note,
             "updated_at": now
         }).in_("id", pickup_ids).execute()
-        mc.send_email(to_email=[ss["email"],mc.get_email().get('sostenibilidad')], operation='Creation', supabase_return=pickup.data[0])
         ### Update associated requests status to "Pendiente"
         for pickup_id in pickup_ids:
             associated_requests = select_pickup_requests(pickup_id)
@@ -449,10 +497,20 @@ def cancel_pickup_form(pickup_ids: list):
     admin_note = st.text_input("Nota del administrador (opcional)")
     cols = st.columns(2)
     if cols[1].button("❌ Cancelar recolección", width="stretch"):
-        cancel_pickups(
+        pickup = cancel_pickups(
             pickup_ids=pickup_ids,
             admin_note=admin_note
         )
+        for pid in pickup_ids:
+            data = get_pickup_date_by_request_id(pid)
+            request_ids = [request['request_id'] for request in data['pickup_requests']]
+            request_usernames = list(set([select_request(rid)["username"] for rid in request_ids]))
+            emails = []
+            for username in request_usernames:
+                email = mc.get_email().get(username)
+                emails.append(email)
+
+            mc.send_email(to_email=[mc.get_email().get('sostenibilidad')] + emails, operation='Cancelled', supabase_return=data)
         st.toast("✅ Recolección cancelada exitosamente")
         st.rerun()
     if cols[0].button("⬅️ Volver", width="stretch"):
@@ -473,6 +531,9 @@ def update_pickup_form(pickup_id: int):
                 provider_name=provider_name,
                 admin_note=admin_note
             )
+            mc.send_email(to_email=[ss["email"],mc.get_email().get('sostenibilidad')], operation='Update', supabase_return=pickup.data[0])
+            st.toast("✅ Recolección actualizada exitosamente")
+            st.rerun()
 
 def update_pickup(pickup_id: int, pickup_date: str, provider_name: str, admin_note: str = None):
     now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
@@ -483,9 +544,6 @@ def update_pickup(pickup_id: int, pickup_date: str, provider_name: str, admin_no
             "admin_note": admin_note,
             "updated_at": now
         }).eq("id", pickup_id).execute()
-        mc.send_email(to_email=[ss["email"],mc.get_email().get('sostenibilidad')], operation='Creation', supabase_return=pickup.data[0])
-        st.toast("✅ Recolección actualizada exitosamente")
-        st.rerun()
         return pickup
 
     except Exception as e:
@@ -776,16 +834,21 @@ if ss["authentication_status"]:
 
     with st.container(border=True, height="stretch", width="stretch", horizontal_alignment="center"):
         st.write("##### Gestión de solicitudes")
-        tabs = st.tabs(["📄 Solicitudes pendientes", "📊 Todas las solicitudes"])
-        with tabs[0]:
-            display_pending_requests_table(list_all_requests())
-        with tabs[1]:
-            display_all_requests_table(list_all_requests())
-        st.write("##### Gestión de recolecciones")
-        tabs = st.tabs(["🗑️ Recolecciones programadas", "📊 Todas las recolecciones"])
-        with tabs[0]:
-            display_schedule_pickup_table(list_all_pickups())
-        with tabs[1]:
-            display_all_pickup_table(list_all_pickups())
+        tabs0 = st.tabs(['Solicitudes', 'Recolecciones'])
+        with tabs0[0]:
+            # Fetch all requests once and reuse across tabs to avoid redundant queries
+            all_requests = list_all_requests()
+            tabs = st.tabs(["📄 Solicitudes pendientes", "📊 Todas las solicitudes"])
+            with tabs[0]:
+                display_pending_requests_table(all_requests)
+            with tabs[1]:
+                display_all_requests_table(all_requests)
+        with tabs0[1]:
+            all_pickups = list_all_pickups()
+            tabs = st.tabs(["🗑️ Recolecciones programadas", "📊 Todas las recolecciones"])
+            with tabs[0]:
+                display_schedule_pickup_table(all_pickups)
+            with tabs[1]:
+                display_all_pickup_table(all_pickups)
 else:
     st.switch_page("./pages/login_home.py")

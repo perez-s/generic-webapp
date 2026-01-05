@@ -1,0 +1,17 @@
+Recolección cancelada.
+
+Estimado colaborador.
+
+La recolección asociada a su solicitud de residuos ha sido cancelada.
+
+
+Ofrecemos disculpas por los inconvenientes que esta situación pueda ocasionar. Agradecemos su comprensión y apoyo continuo en nuestro compromiso con la sostenibilidad y el desarrollo de producciones más responsables. A continuación, se comparten los detalles de la solicitud afectada:
+
+    Número de solicitudes: {id:}
+    Estado actual: Pendiente por recolección
+    Motivo de cancelación: {cancel_reason:}
+
+Usted puede realizar los ajustes necesarios directamente desde la plataforma, Su solicitud será programada de acuerdo con la disponibilidad del servicio.
+
+
+Saludos.

@@ -19,6 +19,23 @@ from datetime import datetime, date
 elevencolors = ["blue", "green", "orange", "red", "purple", "brown", "gray", "pink", "teal", "cyan", "magenta"] 
 email_password = os.getenv('EMAIL_PASSWORD')  
 
+# def img_to_base64():
+#     with open("resources/Logo2.png", "rb") as image_file:
+#         encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+#     return encoded_string
+
+@st.dialog("Actiualizar")
+def update_details(authenticator):
+    if authenticator.update_user_details(st.session_state.get('username'), fields={
+        'Form name':'Actualizar datos de usuario',
+        'Field':'Campo',
+        'First name':'Nombre',
+        'Last name':'Apellido',
+        'Email':'Correo electrónico',
+        'New value':'Nuevo valor',
+        'Update':'Actualizar'}):
+                st.success('Entries updated successfully')
+
 def protected_content():
     authenticator = ss.get('authapp')
     st.markdown(
@@ -53,6 +70,8 @@ def logout_and_home(previous_page: str = None):
             st.page_link(previous_page, label="⬅️ Atrás", width="stretch")
         st.page_link("./pages/login_home.py", label="🏠 Inicio", width="stretch")
         authenticator.logout(button_name='Cerrar sesión', location='main', use_container_width=True, key='logoutformats')
+        if st.button("Actualizar detalles de usuario", use_container_width=True):
+            update_details(authenticator)
     with columns[2]:
         st.markdown(f"Sesión iniciada como: **{ss['name']}**")
     with columns[6]:
@@ -186,7 +205,7 @@ def save_file(file_uploader, file_path) -> str:
     except Exception as e:
         st.toast(f"Error guardando archivo: {e.message}")
     
-def send_email(to_email: list, operation: Literal['Creation', 'Schedule', 'Cancelled'], supabase_return: dict):
+def send_email(to_email: list, operation: Literal['Creation', 'Schedule', 'Cancelled', 'Update'], supabase_return: dict):
     sender_email = 'no-reply@mywero.com.co'
     if operation == 'Creation':
         subject = f'Solicitud No. {supabase_return.get("id")} creada exitosamente'
@@ -194,6 +213,25 @@ def send_email(to_email: list, operation: Literal['Creation', 'Schedule', 'Cance
         txt_content = open('./resources/success_email.txt').read().format(id=supabase_return.get("id"), date=created_at.strftime("%Y-%m-%d %H:%M:%S"), residues=', '.join(supabase_return.get("request_category", [])))
         html_content0 = open('./resources/success_email.html').read()
         html_content = html_content0.replace('{id:}', str(supabase_return.get("id"))).replace('{date:}', created_at.strftime("%Y-%m-%d %H:%M:%S")).replace('{residues:}', ', '.join(supabase_return.get("request_category", [])))
+    elif operation == 'Schedule':
+        subject = f'Solicitud agendada exitosamente a recolección {supabase_return["id"]}'
+        pickup_date = supabase_return['pickup_date']
+        request_ids = [request['request_id'] for request in supabase_return['pickup_requests']]
+        txt_content = open('./resources/schedule_email.txt').read().format(id=', '.join(map(str, request_ids)), pickup_date=pickup_date)
+        html_content0 = open('./resources/schedule_email.html').read().replace('{id:}', ', '.join(map(str, request_ids))).replace('{pickup_date:}', pickup_date)
+        html_content = html_content0
+    elif operation == 'Update':
+        subject = f'Solicitud No. {supabase_return.get("id")} actualizada exitosamente'
+        updated_at = datetime.fromisoformat(supabase_return.get("updated_at").replace('Z', '+00:00'))
+        txt_content = open('./resources/request_update_email.txt').read().format(id=supabase_return.get("id"), date=updated_at.strftime("%Y-%m-%d %H:%M:%S"), residues=', '.join(supabase_return.get("request_category", [])))
+        html_content0 = open('./resources/request_update_email.html').read()
+        html_content = html_content0.replace('{id:}', str(supabase_return.get("id"))).replace('{date:}', updated_at.strftime("%Y-%m-%d %H:%M:%S")).replace('{residues:}', ', '.join(supabase_return.get("request_category", [])))
+    elif operation == 'Cancelled':
+        subject = f'Recolección cancelada {supabase_return["id"]}'
+        request_ids = [request['request_id'] for request in supabase_return['pickup_requests']]
+        txt_content = open('./resources/cancel_email.txt').read().format(id=', '.join(map(str, request_ids)), cancel_reason=supabase_return['admin_note'])
+        html_content0 = open('./resources/cancel_email.html').read().replace('{id:}', ', '.join(map(str, request_ids))).replace('{cancel_reason:}', supabase_return['admin_note'])
+        html_content = html_content0
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
     msg['From'] = sender_email
@@ -205,8 +243,18 @@ def send_email(to_email: list, operation: Literal['Creation', 'Schedule', 'Cance
     # envelope header.
     try:
         with smtplib.SMTP_SSL('mail.mywero.com.co', 465) as server:
-            server.login(sender_email, email_password)
+            server.login(sender_email, "QhgD72lIv3pWEher")
             server.send_message(msg)
     except Exception as e:
         st.toast(f"Error enviando correo electrónico: {e}", icon="❌")
 
+def get_email_from_request_id(request_ids: list) -> list:
+    """Gets email addresses associated with given request IDs from config.yaml."""
+    emails = set()
+    email_map = get_email()
+    
+    for request_id in request_ids:
+        for username, email in email_map.items():
+            emails.add(email)
+    
+    return list(emails)

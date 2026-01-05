@@ -360,7 +360,7 @@ def create_provider_dialog():
             certificado_bancario_file = st.file_uploader("Certificado bancario (opcional)", type=["pdf", "jpg", "png"])    
         submitted = st.form_submit_button("Enviar solicitud")
         if submitted:
-            username = f"{ss["name"]}"
+            username = f"{ss["username"]}"
             # Validate required file uploads
             missing = []
             if not lic_amb_files:

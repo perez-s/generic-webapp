@@ -12,70 +12,70 @@ credentials:
       password: $2b$12$gfV/ny1JwjoJUd1GjXv06euklMLyqYbg3sDl9U3/lEesDro3XRGHe
       role: admin
     almacen:
-      email: perez14sebastian@gmail.com
+      email: perez14sebastian+almacen@gmail.com
       failed_login_attempts: 0
       logged_in: false
       name: Almacen
       password: $2b$12$0ZPsSv5YmuVPNINXQWWedu92R4GkVOWPRLCMcNtnjw2RUjmi1zZhe
       role: caracol_users
     caracol:
-      email: perez14sebastian@gmail.com
+      email: perez14sebastian+caracol@gmail.com
       failed_login_attempts: 0
       logged_in: false
       name: Caracol
       password: $2b$12$aa5WVOL6abDpsUpHafLvIOokcd/Br7UTb7AGwJB.TOi/mmbYLraHS
       role: caracol
-    enfermeria:
-      email: perez14sebastian@gmail.com
-      failed_login_attempts: 0
-      logged_in: false
-      name: Enfermeria
-      password: $2b$12$ifI.VqCU3Mz0s13kBY72suKm8B4IxYpgmSS5wMaTiTAR67fHUhPbC
-      role: caracol_users
     mantenimiento:
-      email: perez14sebastian@gmail.com
+      email: perez14sebastian+mantenimiento@gmail.com
       failed_login_attempts: 0
       logged_in: false
       name: Mantenimiento
       password: $2b$12$FcznG6HfbTqBrkVKK1FCkuparOChwdQ8s3.MHl4TgZtCc2yIW4F6S
       role: caracol_users
     sedes:
-      email: perez14sebastian@gmail.com
+      email: perez14sebastian+sedes@gmail.com
       failed_login_attempts: 0
       logged_in: false
       name: Sedes
       password: $2b$12$SpTTS5crDcW5gqzc3UWsTen.Bg6yuRcsBSfcNo.fgAhU./XKk9DXm
       role: caracol_users
     sostenibilidad:
-      email: perez14sebastian@gmail.com
+      email: perez14sebastian+sostenibilidad@gmail.com
       failed_login_attempts: 0
       logged_in: true
       name: Sostenibilidad
       password: $2b$12$Yjz8uCtowWH4xAqBng/lIOaLGB6S8OYlecyAeGqdcnpkTAgFMjT42
       role: caracol_users
+    sst:
+      email: perez14sebastian+sst@gmail.com
+      failed_login_attempts: 0
+      logged_in: false
+      name: SST
+      password: $2b$12$ifI.VqCU3Mz0s13kBY72suKm8B4IxYpgmSS5wMaTiTAR67fHUhPbC
+      role: caracol_users
     ti:
-      email: perez14sebastian@gmail.com
+      email: perez14sebastian+ti@gmail.com
       failed_login_attempts: 0
       logged_in: false
       name: Ti
       password: $2b$12$u.ekDC11ZUO81tdztyUdDOv4nrwu5JxqQ2iD1hjmXdPmTXhfE1fUW
       role: caracol_users
     wero:
-      email: perez14sebastian@gmail.com
+      email: perez14sebastian+wero@gmail.com
       failed_login_attempts: 0
       logged_in: true
       name: Wero
       password: $2b$12$JtGhOwtOMttoDISYQwy9zenCwU16Z7vdpti39463IK/.uP75HeVWm
       role: user
     wero-caracol:
-      email: perez14sebastian@gmail.com
+      email: perez14sebastian+wero-caracol@gmail.com
       failed_login_attempts: 0
       logged_in: true
       name: Wero Caracol
       password: $2b$12$LNs921eIyRPTrxEchDYbnuA/FernrU4NHNFrhMaRMZTs3HJGQzHmq
       role: wero
     wero2:
-      email: perez14sebastian@gmail.com
+      email: perez14sebastian+wero2@gmail.com
       failed_login_attempts: 0
       logged_in: true
       name: Wero2
