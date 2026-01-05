@@ -531,7 +531,6 @@ def update_pickup_form(pickup_id: int):
                 provider_name=provider_name,
                 admin_note=admin_note
             )
-            mc.send_email(to_email=[ss["email"],mc.get_email().get('sostenibilidad')], operation='Update', supabase_return=pickup.data[0])
             st.toast("✅ Recolección actualizada exitosamente")
             st.rerun()
 
