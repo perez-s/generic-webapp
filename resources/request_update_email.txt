@@ -2,7 +2,7 @@ Estimado colaborador.
 
 ​Su solicitud para la recolección de residuos ha sido actualizada.
 
-Número de solicitud: {id} 
+Id de solicitud: {id} 
 Fecha de registro: {date} 
 Estado actual: Pendiente por recolección 
 Residuos declarados: {residues} 

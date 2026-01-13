@@ -79,10 +79,17 @@ def display_home_dashboard():
             display_metric(cols1[3], "**☣️ RESPEL**", completed_request_count('RESPEL'), delta=" ", color="normal")
         with cols[1]:
             cols1 = st.columns(4)
-            display_metric(cols1[0], "**🏗️ RCD**", f"{kg_collected_total('RCD')*100/kg_collected_total():0.0f} %", delta=f"{kg_collected_total('RCD')} kg",color="normal")
-            display_metric(cols1[1], "**🗑️ Ordinarios**", f"{kg_collected_total('Ordinarios')*100/kg_collected_total():0.0f} %", delta=f"{kg_collected_total('Ordinarios')} kg",color="normal")
-            display_metric(cols1[2], "**🪵 Madera**", f"{kg_collected_total('Madera')*100/kg_collected_total():0.0f} %", delta=f"{kg_collected_total('Madera')} kg",color="normal")
-            display_metric(cols1[3], "**☣️ RESPEL**", f"{kg_collected_total('RESPEL')*100/kg_collected_total():0.0f} %", delta=f"{kg_collected_total('RESPEL')} kg",color="normal")
+            total_kg = kg_collected_total()
+            if total_kg > 0:
+                display_metric(cols1[0], "**🏗️ RCD**", f"{kg_collected_total('RCD')*100/total_kg:0.0f} %", delta=f"{kg_collected_total('RCD')} kg",color="normal")
+                display_metric(cols1[1], "**🗑️ Ordinarios**", f"{kg_collected_total('Ordinarios')*100/total_kg:0.0f} %", delta=f"{kg_collected_total('Ordinarios')} kg",color="normal")
+                display_metric(cols1[2], "**🪵 Madera**", f"{kg_collected_total('Madera')*100/total_kg:0.0f} %", delta=f"{kg_collected_total('Madera')} kg",color="normal")
+                display_metric(cols1[3], "**☣️ RESPEL**", f"{kg_collected_total('RESPEL')*100/total_kg:0.0f} %", delta=f"{kg_collected_total('RESPEL')} kg",color="normal")
+            else:
+                display_metric(cols1[0], "**🏗️ RCD**", "0 %", delta="0 kg",color="normal")
+                display_metric(cols1[1], "**🗑️ Ordinarios**", "0 %", delta="0 kg",color="normal")
+                display_metric(cols1[2], "**🪵 Madera**", "0 %", delta="0 kg",color="normal")
+                display_metric(cols1[3], "**☣️ RESPEL**", "0 %", delta="0 kg",color="normal")
             
 
 mc.protected_content()

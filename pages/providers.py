@@ -6,6 +6,8 @@ import time
 from yaml.loader import SafeLoader
 import streamlit_authenticator as stauth
 import modules.common as mc
+import modules.auth as mauth
+import modules.queries as mq
 
 ### Page specific imports ###
 from supabase import create_client, Client
@@ -69,7 +71,7 @@ def deactivate_provider(provider_ids: list):
         return True
 
     except Exception as e:
-        st.error(f"Error eliminando proveedor(es): {e.message}")
+        st.error(f"Error eliminando proveedor(es): {e}")
         return False
 
 @st.dialog("⚠️ Confirmar eliminación")
@@ -106,7 +108,6 @@ def update_provider(
         ccio_path: str, 
         other_docs_path: str,
         certificado_bancario_path: str,
-        updated_at: str
     ):
     try:
         request = supabase.table("providers").update({
@@ -123,14 +124,13 @@ def update_provider(
             "ccio_path": ccio_path,
             "other_docs_path": other_docs_path,
             "certificado_bancario_path": certificado_bancario_path,
-            "updated_at": updated_at
         }).eq("id", provider_id).execute()
         st.toast("✅ Proveedor actualizado exitosamente")
         st.rerun()
         return request
 
     except Exception as e:
-        st.error(f"Error actualizando proveedor: {e.message}")
+        st.error(f"Error actualizando proveedor: {e}")
 
 @st.dialog("Actualizar proveedor", width="large")
 def update_provider_form(id: int,provider_name_default: str, provider_nit_default: int, provider_email_default: str, provider_contact_default: str, provider_contact_phone_default: int, provider_website_default: str, provider_category_default: list, provider_activity_default: list, lic_amb_path_default: str, rut_path_default: str, ccio_path_default: str, other_docs_path_default: str, certificado_bancario_path_default: str = ""):    
@@ -158,7 +158,7 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
             provider_website = st.text_input("Sitio web (opcional)", value=provider_website_default, placeholder="https://ejemplo.com")
             provider_category = st.multiselect(
                 "Tipos de residuos",
-                options=get_enum_values("residue_type"),
+                options=mq.get_residuo_corriente_names(),
                 default=provider_category_default
             )
             provider_auth_activities = st.multiselect(
@@ -183,9 +183,7 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
         
         st.divider()
         submitted = st.form_submit_button("Actualizar proveedor")
-        if submitted:
-            now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
-            
+        if submitted:            
             # Keep existing paths by default
             lic_amb_path = lic_amb_path_default
             rut_path = rut_path_default
@@ -237,7 +235,7 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
                 certificado_bancario_path = mc.path_file(provider_nit, "certificado_bancario", certificado_bancario_file)
                 mc.save_file(certificado_bancario_file, certificado_bancario_path)
             
-            update_provider(id, provider_name, provider_nit, provider_email, provider_contact, provider_contact_phone, provider_website, provider_category, provider_auth_activities, lic_amb_path, rut_path, ccio_path, other_docs_path, certificado_bancario_path, now)     
+            update_provider(id, provider_name, provider_nit, provider_email, provider_contact, provider_contact_phone, provider_website, provider_category, provider_auth_activities, lic_amb_path, rut_path, ccio_path, other_docs_path, certificado_bancario_path)     
 
 def select_provider(provider_id: int):
     try:
@@ -246,7 +244,7 @@ def select_provider(provider_id: int):
         ).eq("id", provider_id).execute()
         return provider.data[0] if provider.data else None
     except Exception as e:
-        st.error(f"Error seleccionando proveedor: {e.message}")
+        st.error(f"Error seleccionando proveedor: {e}")
         return None
 
 def create_provider_button():
@@ -256,7 +254,7 @@ def create_provider_button():
             create_provider_dialog()
 
 def create_provider(
-        username: str,
+        userid: int,
         provider_name: str, 
         provider_nit: int, 
         provider_email: str, 
@@ -275,7 +273,7 @@ def create_provider(
     print(now)
     try:
         request = supabase.table("providers").insert({
-            "username": username,
+            "userid": userid,
             "provider_name": provider_name,
             "provider_nit": provider_nit,
             "provider_email": provider_email,
@@ -295,14 +293,14 @@ def create_provider(
         return request
 
     except Exception as e:
-        st.error(f"Error creando proveedor: {e.message}")
+        st.error(f"Error creando proveedor: {e}")
 
 def list_all_providers(limit=200):
     try:
         providers = supabase.table("providers").select("*").order("id", desc=True).limit(limit).execute()
         return providers.data
     except Exception as e:
-        st.error(f"Error fetching providers: {e.message}")
+        st.error(f"Error fetching providers: {e}")
         return []
 
 def format_date(date_str: str) -> str:
@@ -317,7 +315,7 @@ def get_enum_values(enum_name: str):
         result = supabase.rpc('get_types', {'enum_type': f'{enum_name}'}).execute()
         return sorted(result.data)
     except Exception as e:
-        print(f"Error fetching enum values: {e.message}")
+        print(f"Error fetching enum values: {e}")
 
 @st.dialog("Crear proveedor", width="large")
 def create_provider_dialog():
@@ -343,7 +341,7 @@ def create_provider_dialog():
             provider_website = st.text_input("Sitio web (opcional)", placeholder="https://ejemplo.com")
             provider_category = st.multiselect(
                 "Tipos de residuos",
-                options=get_enum_values("residue_type")
+                options=mq.get_residuo_corriente_names()
             )
             provider_auth_activities = st.multiselect(
                 "Actividades autorizadas",
@@ -360,11 +358,9 @@ def create_provider_dialog():
             certificado_bancario_file = st.file_uploader("Certificado bancario (opcional)", type=["pdf", "jpg", "png"])    
         submitted = st.form_submit_button("Enviar solicitud")
         if submitted:
-            username = f"{ss["username"]}"
+            userid = mauth.get_user_id(f"{ss["username"]}")
             # Validate required file uploads
             missing = []
-            if not lic_amb_files:
-                missing.append("Licencia ambiental")
             if not rut_file:
                 missing.append("RUT")
             if not ccio_file:
@@ -392,7 +388,7 @@ def create_provider_dialog():
             # Persist provider record
             try:
                 result = create_provider(
-                    username,
+                    userid,
                     provider_name,
                     provider_nit,
                     provider_email,
@@ -431,7 +427,7 @@ def create_provider_dialog():
                     time.sleep(2)
                     st.rerun()
             except Exception as e:
-                st.toast(f"❌ Error al crear proveedor: {e.message}")
+                st.toast(f"❌ Error al crear proveedor: {e}")
                 
 @st.dialog("📋 Detalle del proveedor", width="large")
 def provider_detail_view(provider_id: int):
@@ -502,7 +498,7 @@ def provider_detail_view(provider_id: int):
         
         # Documents section with inline PDF viewers
         with st.expander("📄 Documentos soporte", expanded=False):
-            # Licencia ambiental
+            st.markdown("**Licencia ambiental**")
             with st.expander("📄 Licencia ambiental", expanded=False):
                 lic_amb_path = provider.get('lic_amb_path', '')
                 if lic_amb_path:
@@ -518,7 +514,7 @@ def provider_detail_view(provider_id: int):
                                             pdf_data = pdf_file.read()
                                             st.pdf(pdf_data, key=f"view_lic_amb_pdf_{idx}")
                                     except Exception as e:
-                                        st.error(f"Error cargando PDF: {e.message}")
+                                        st.error(f"Error cargando PDF: {e}")
                         if not has_files:
                             st.caption("No hay archivos disponibles")
                     else:
@@ -536,7 +532,7 @@ def provider_detail_view(provider_id: int):
                             pdf_data = pdf_file.read()
                             st.pdf(pdf_data, key="view_rut_pdf")
                     except Exception as e:
-                        st.error(f"Error cargando PDF: {e.message}")
+                        st.error(f"Error cargando PDF: {e}")
             else:
                 st.caption("No hay archivo disponible")
             
@@ -550,7 +546,7 @@ def provider_detail_view(provider_id: int):
                             pdf_data = pdf_file.read()
                             st.pdf(pdf_data, key="view_ccio_pdf")
                     except Exception as e:
-                        st.error(f"Error cargando PDF: {e.message}")
+                        st.error(f"Error cargando PDF: {e}")
             else:
                 st.caption("No hay archivo disponible")
             
@@ -564,11 +560,12 @@ def provider_detail_view(provider_id: int):
                             pdf_data = pdf_file.read()
                             st.pdf(pdf_data, key="view_certificado_bancario_pdf")
                     except Exception as e:
-                        st.error(f"Error cargando PDF: {e.message}")
+                        st.error(f"Error cargando PDF: {e}")
             else:
                 st.caption("No hay archivo disponible")
 
             # Otros documentos
+            st.markdown("**Otros documentos**")
             with st.expander("📄 Otros documentos", expanded=False):
                 other_docs_path = provider.get('other_docs_path', '')
                 if other_docs_path:
@@ -584,7 +581,7 @@ def provider_detail_view(provider_id: int):
                                             pdf_data = pdf_file.read()
                                             st.pdf(pdf_data, key=f"view_other_docs_pdf_{idx}")
                                     except Exception as e:
-                                        st.error(f"Error cargando PDF: {e.message}")
+                                        st.error(f"Error cargando PDF: {e}")
                         if not has_files:
                             st.caption("No hay archivos disponibles")
                     else:
@@ -628,7 +625,7 @@ def provider_detail_view(provider_id: int):
                 st.info("No hay aliados asociados a este proveedor")
     
     except Exception as e:
-        st.error(f"Error cargando detalles del proveedor: {e.message}")
+        st.error(f"Error cargando detalles del proveedor: {e}")
 
 def display_all_providers_table(providers_data):
     try:
@@ -651,12 +648,16 @@ def display_all_providers_table(providers_data):
             disabled=["id","provider_name", "provider_nit", "provider_category", "created_at", "updated_at", "Estado"],
             column_config={
                 "id": "ID",
+                "Seleccionar": st.column_config.CheckboxColumn(
+                    "Seleccionar",
+                    pinned=True
+                ),
                 "provider_is_active": "Activo",
                 "provider_name": "Nombre del proveedor",
                 "provider_nit": "NIT del proveedor",
                 "provider_category": st.column_config.MultiselectColumn(
                     "Categorías de residuos",
-                    options=get_enum_values("residue_type"),
+                    options=mq.get_residuo_corriente_names(),
                     color=mc.elevencolors
                 ),
                 "created_at": st.column_config.DateColumn(

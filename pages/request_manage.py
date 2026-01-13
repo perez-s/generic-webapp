@@ -5,6 +5,8 @@ import time
 from yaml.loader import SafeLoader
 import streamlit_authenticator as stauth
 import modules.common as mc
+import modules.auth as mauth
+import modules.queries as mq
 
 ### Page specific imports ###
 import streamlit as st
@@ -36,46 +38,50 @@ def get_pickup_date_by_request_id(pickup_id: int):
             return result.data[0]
         return None
     except Exception as e:
-        st.error(f"Error fetching pickup date: {e.message}")
+        st.error(f"Error fetching pickup date: {e}")
         return None
 
-def translate_categories(categories):
-    translation_map = {
-        "Aceites usados": "Y9-Aceite usado",
-        "Aerosoles": "Y12-Aerosoles",
-        "Baterías": "Y31-Baterías plomo ácido",
-        "Baterías de ion litio": "Z-Baterías de ion litio",
-        "Biosanitarios": "Y1-Biosanitarios",
-        "Luminarias": "Y29-Bombillos, tubos y lámparas",
-        "Pilas": "Y23-Pilas y baterías",
-        "Pinturas": "Y12-Pinturas",
-        "RAEE": "A1180-Aparatos eléctricos y electrónicos",
-        "Sólidos con aceite": "Y9-Sólidos contaminados con aceite",
-        "Tóneres": "Y12-Tóneres",
-        "Otros peligrosos": "Z-Otros peligrosos"
-    }
-    reverse_map = {v: k for k, v in translation_map.items()}
-    combined_map = {**translation_map, **reverse_map}
-    return [combined_map.get(category, category) for category in categories]
+def translate_categories(categories: list):
+    translation_pairs = [
+        ("Aceites usados", "Y9-Aceite usado"),
+        ("Aerosoles", "Y12-Aerosoles"),
+        ("Baterías", "Y31-Baterías plomo ácido"),
+        ("Baterías de ion litio", "Z-Baterías de ion litio"),
+        ("Biosanitarios", "Y1-Biosanitarios"),
+        ("Luminarias", "Y29-Bombillos, tubos y lámparas"),
+        ("Pilas", "Y23-Pilas y baterías"),
+        ("Pinturas", "Y12-Pinturas"),
+        ("RAEE", "A1180-Aparatos eléctricos y electrónicos"),
+        ("Sólidos con aceite", "Y9-Sólidos contaminados con aceite"),
+        ("Tóneres", "Y12-Tóneres"),
+        ("Otros peligrosos", "Z-Otros peligrosos"),
+    ]
+    translation_map = {}
+    for word, translation in translation_pairs:
+        translation_map[word] = translation
+        translation_map[translation] = word
+    return [translation_map[category] if category in translation_map else category for category in categories]
 
 def get_providers():
     try:
         providers = supabase.table("providers").select("provider_name").eq("provider_is_active", True).execute()
         return [provider['provider_name'] for provider in providers.data]
     except Exception as e:
-        st.error(f"Error fetching providers: {e.message}")
+        st.error(f"Error fetching providers: {e}")
         return []
 
 def display_pending_requests_table(requests_data):
     try:
         rows = pd.DataFrame(requests_data)
-        rows = rows[["id","username","status", "request_category","measure_type","estimated_amount", "created_at", "updated_at"]]
-        rows = rows[rows["status"] == "Pendiente"]
+        rows = rows[["id","users","current_status", "request_category","measure_type","estimated_amount", "created_at", "updated_at"]]
+        rows["userid"] = rows["users"].apply(lambda x: x["id"] if isinstance(x, dict) else x)
+        rows["username"] = rows["users"].apply(lambda x: x["username"] if isinstance(x, dict) else x)
+        rows = rows[["id","username","current_status", "request_category","measure_type","estimated_amount", "created_at", "updated_at"]]       
+        rows = rows[rows["current_status"] == "Pendiente"]
         rows["created_at"] = pd.to_datetime(rows["created_at"])
         rows["updated_at"] = pd.to_datetime(rows["updated_at"])
         rows.set_index("id", inplace=True)
         rows["Seleccionar"] = False
-
         if rows.empty:
             st.info("📭 No hay solicitudes pendientes aun.")
             return
@@ -83,21 +89,22 @@ def display_pending_requests_table(requests_data):
         displayed_table = st.data_editor(
             rows,
             width="stretch",
-            disabled=["id","username","status", "request_category", "measure_type", "estimated_amount", "created_at", "updated_at"], 
+            disabled=["id","username","current_status", "request_category", "measure_type", "estimated_amount", "created_at", "updated_at"], 
             column_config={
                 "id": "ID",
+                "username": "Usuario",
                 "Seleccionar": st.column_config.CheckboxColumn(
                     "Seleccionar",
                     pinned=True
                 ),
                 "request_category": st.column_config.MultiselectColumn(
                     "Categorías de residuos",
-                    options=get_enum_values("residue_type"),
+                    options=get_enum_values("residue_category"),
                     color=mc.elevencolors
                 ),
                 "measure_type": "Tipo de unidad",
                 "estimated_amount": "Cantidad estimada",
-                "status": st.column_config.MultiselectColumn(
+                "current_status": st.column_config.MultiselectColumn(
                     "Estado",
                     options=get_enum_values("status_type"),
                     color=["blue", "green", "red"]
@@ -121,12 +128,15 @@ def display_pending_requests_table(requests_data):
                     all_requests=requests_data
                 )
     except Exception as e:
-            st.write(f"No hay solicitudes pendientes disponibles") 
+            st.write(f'Error loading pending requests: {e}') 
 
 def display_all_requests_table(requests_data):
     try:   
         rows = pd.DataFrame(requests_data)
-        rows = rows[["id","username","status", "request_category","measure_type","estimated_amount", "created_at", "updated_at"]]
+        rows = rows[["id","users","current_status", "request_category","measure_type","estimated_amount", "created_at", "updated_at"]]
+        rows["userid"] = rows["users"].apply(lambda x: x["id"] if isinstance(x, dict) else x)
+        rows["username"] = rows["users"].apply(lambda x: x["username"] if isinstance(x, dict) else x)
+        rows = rows[["id","username","current_status", "request_category","measure_type","estimated_amount", "created_at", "updated_at"]]       
         rows["created_at"] = pd.to_datetime(rows["created_at"])
         rows["updated_at"] = pd.to_datetime(rows["updated_at"])
         rows.set_index("id", inplace=True)
@@ -134,10 +144,9 @@ def display_all_requests_table(requests_data):
             st.info("📭 No hay solicitudes disponibles aun.")
             return
 
-        displayed_table = st.data_editor(
+        displayed_table = st.dataframe(
             rows,
             width="stretch",
-            disabled=["id","username","status", "request_category", "measure_type", "estimated_amount", "created_at", "updated_at"], 
             column_config={
                 "id": "ID",
                 "Seleccionar": st.column_config.CheckboxColumn(
@@ -146,12 +155,12 @@ def display_all_requests_table(requests_data):
                 ),
                 "request_category": st.column_config.MultiselectColumn(
                     "Categorías de residuos",
-                    options=get_enum_values("residue_type"),
+                    options=get_enum_values("residue_category"),
                     color=mc.elevencolors
                 ),
                 "measure_type": "Tipo de unidad",
                 "estimated_amount": "Cantidad estimada",
-                "status": st.column_config.MultiselectColumn(
+                "current_status": st.column_config.MultiselectColumn(
                     "Estado",
                     options=get_enum_values("status_type"),
                     color=["blue", "green", "red"]
@@ -167,19 +176,19 @@ def display_all_requests_table(requests_data):
             }
         )
     except Exception as e:
-            st.write(f"No hay solicitudes pendientes disponibles") 
+            st.info(f"📭 No hay solicitudes pendientes disponibles") 
 
 def get_enum_values(enum_name: str):
     try:
         result = supabase.rpc('get_types', {'enum_type': f'{enum_name}'}).execute()
         return sorted(result.data)
     except Exception as e:
-        print(f"Error fetching enum values: {e.message}")
+        print(f"Error fetching enum values: {e}")
 
 @st.dialog("Programar solicitudes", width="large")
 def schedule_request_form(ids: list, all_requests):
     providers = get_providers()
-    request_usernames = list(set([select_request(rid)["username"] for rid in ids]))
+    request_usernames = list(set([select_request_email(rid) for rid in ids]))
     emails = []
     for username in request_usernames:
         email = mc.get_email().get(username)
@@ -197,16 +206,17 @@ def schedule_request_form(ids: list, all_requests):
         with cols[1]:
             st.write("### Solicitudes seleccionadas:")
             df = pd.DataFrame(all_requests)
+            df["username"] = df["users"].apply(lambda x: x["username"] if isinstance(x, dict) else x)
             df = df[df["id"].isin(ids)]
             df.set_index("id", inplace=True)
             st.dataframe(
-                df[["username", "request_category", "measure_type", "estimated_amount"]],
+                df[["username","request_category", "measure_type", "estimated_amount"]],
                 width="stretch",
                 column_config={
                     "username": "Usuario",
                     "request_category": st.column_config.MultiselectColumn(
                         "Categorías de residuos",
-                        options=get_enum_values("residue_type"),
+                        options=get_enum_values("residue_category"),
                         color=mc.elevencolors
                     ),
                     "measure_type": "Unidades",
@@ -220,8 +230,8 @@ def schedule_request_form(ids: list, all_requests):
                 admin_note = None
             with st.spinner("⏳ Programando solicitudes..."):
                 pickup = create_pickup(
-                    username=f"{ss["username"]}",
-                    provider_name=provider_name,
+                    userid=userid,
+                    providerid=mauth.get_provider_id(provider_name),
                     pickup_date=pickup_date.isoformat(),
                     admin_note=admin_note
                 )
@@ -239,52 +249,47 @@ def schedule_request_form(ids: list, all_requests):
             st.rerun()
 
 def update_request_status(request_ids: list, request_status: str, admin_note: str = None):
-    now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
     try:
         request = supabase.table("requests").update({
-            "status": request_status,
+            "current_status": request_status,
             "admin_note": admin_note,
-            "updated_at": now
         }).in_("id", request_ids).execute()
         return request
 
     except Exception as e:
-        st.error(f"Error updating request: {e.message}")
+        st.error(f"Error updating request: {e}")
 
-def select_request(request_id: int):
+def select_request_email(request_id: int):
     try:
         request = supabase.table("requests").select(
-            "username, status, request_category, measure_type, estimated_amount, details, admin_note"
+            "users(username)"
         ).eq("id", request_id).execute()
-        return request.data[0] if request.data else None
+        return request.data[0]["users"]["username"] if request.data else None
     except Exception as e:
-        st.error(f"Error fetching request: {e.message}")
+        st.error(f"Error fetching request: {e}")
         return None
 
 def list_all_requests(limit=200):
     try:
         requests = supabase.table("requests").select(
-            "id, username, request_category, measure_type, estimated_amount, details, status, admin_note, created_at, updated_at"
+            "id, users(*), request_category, measure_type, estimated_amount, details, current_status, admin_note, created_at, updated_at"
         ).order("id", desc=True).limit(limit).execute()
         return requests.data
     except Exception as e:
-        st.error(f"Error fetching requests: {e.message}")
+        st.error(f"Error fetching requests: {e}")
         return []
 
-def create_pickup(username: str, provider_name: str, pickup_date: str, admin_note: str = None):
-    now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
+def create_pickup(userid: str, providerid: str, pickup_date: str, admin_note: str = None):
     try:
         request = supabase.table("pickup").insert({
-            "username": username,
-            "provider_name": provider_name,
+            "userid": userid,
+            "providerid": providerid,
             "pickup_date": pickup_date,
             "admin_note": admin_note,
-            "created_at": now,
-            "updated_at": now
         }).execute()
         return request
     except Exception as e:
-        st.error(f"Error creating pickup request: {e.message}")
+        st.error(f"Error creating pickup request: {e}")
 
 def create_pickup_requests(request_ids: list, pickup_id: int):
     try:
@@ -294,16 +299,17 @@ def create_pickup_requests(request_ids: list, pickup_id: int):
                 "pickup_id": pickup_id
             }).execute()
     except Exception as e:
-        st.error(f"Error creating pickup requests: {e.message}")
+        st.error(f"Error creating pickup requests: {e}")
 
 def display_schedule_pickup_table(pickup_data):
     try:
         if not pickup_data:
             st.info("📭 No hay recolecciones programadas aún. Programa una desde la pestaña de solicitudes pendientes.")
             return
-
         rows = pd.DataFrame(pickup_data)
-        rows = rows[["id","pickup_status", "pickup_date", "provider_name", "created_at", "updated_at"]]
+        rows = rows[["id","providers","pickup_status", "pickup_date", "created_at", "updated_at"]]
+        rows["provider_name"] = rows["providers"].apply(lambda x: x["provider_name"] if isinstance(x, dict) else x)
+        rows = rows[["id","provider_name","pickup_status", "pickup_date", "created_at", "updated_at"]]
         rows["created_at"] = pd.to_datetime(rows["created_at"])
         rows["updated_at"] = pd.to_datetime(rows["updated_at"])
         rows = rows[rows["pickup_status"] == "Programada"]
@@ -382,7 +388,9 @@ def display_schedule_pickup_table(pickup_data):
 def display_all_pickup_table(pickup_data):
     try:   
         rows = pd.DataFrame(pickup_data)
-        rows = rows[["id","pickup_status", "pickup_date", "provider_name", "created_at", "updated_at"]]
+        rows = rows[["id", "providers", "pickup_status", "pickup_date", "created_at", "updated_at"]]
+        rows["provider_name"] = rows["providers"].apply(lambda x: x["provider_name"] if isinstance(x, dict) else x)
+        rows = rows[["id","provider_name","pickup_status", "pickup_date", "created_at", "updated_at"]]
         rows["created_at"] = pd.to_datetime(rows["created_at"])
         rows["updated_at"] = pd.to_datetime(rows["updated_at"])
         rows.set_index("id", inplace=True)
@@ -448,10 +456,10 @@ def display_all_pickup_table(pickup_data):
 
 def list_all_pickups(limit=200):
     try:
-        pickups = supabase.table("pickup").select("*").order("id", desc=True).limit(limit).execute()
+        pickups = supabase.table("pickup").select("*", "providers(*)").order("id", desc=True).limit(limit).execute()
         return pickups.data
     except Exception as e:
-        st.error(f"Error fetching pickups: {e.message}")
+        st.error(f"Error fetching pickups: {e}")
 
 def select_pickup_requests(pickup_id: int):
     try:
@@ -460,7 +468,7 @@ def select_pickup_requests(pickup_id: int):
         ).eq("pickup_id", pickup_id).execute()
         return pickup_requests.data if pickup_requests.data else None
     except Exception as e:
-        st.error(f"Error fetching pickup requests: {e.message}")
+        st.error(f"Error fetching pickup requests: {e}")
         return []
 
 def cancel_pickups(pickup_ids: list, admin_note: str = None):
@@ -487,7 +495,7 @@ def cancel_pickups(pickup_ids: list, admin_note: str = None):
         return pickup
 
     except Exception as e:
-        st.error(f"Error canceling pickup: {e.message}")
+        st.error(f"Error canceling pickup: {e}")
     st.rerun()    
 
 @st.dialog("Cancelar recolección", width="small")
@@ -504,7 +512,7 @@ def cancel_pickup_form(pickup_ids: list):
         for pid in pickup_ids:
             data = get_pickup_date_by_request_id(pid)
             request_ids = [request['request_id'] for request in data['pickup_requests']]
-            request_usernames = list(set([select_request(rid)["username"] for rid in request_ids]))
+            request_usernames = list(set([select_request_email(rid) for rid in request_ids]))
             emails = []
             for username in request_usernames:
                 email = mc.get_email().get(username)
@@ -546,7 +554,7 @@ def update_pickup(pickup_id: int, pickup_date: str, provider_name: str, admin_no
         return pickup
 
     except Exception as e:
-        st.error(f"Error updating pickup: {e.message}")
+        st.error(f"Error updating pickup: {e}")
 
 def complete_pickup(pickup_id: int, cert_recoleccion_path: str, cert_transformacion_disposicion_path: str, otros_documentos_path: str = None):
     now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
@@ -579,9 +587,7 @@ def complete_pickup(pickup_id: int, cert_recoleccion_path: str, cert_transformac
 @st.dialog("Completar recolección", width="medium")
 def complete_pickup_form(pickup_id: int):
     st.write("### Residuos recolectados")
-    displayed_table = display_ask_real_ammount_table(
-        request_ids=[req["request_id"] for req in select_pickup_requests(pickup_id)]
-    )
+    displayed_table = display_ask_real_ammount_table()
 
     st.divider()
 
@@ -646,33 +652,24 @@ def complete_pickup_form(pickup_id: int):
             st.toast(f"❌ Error al completar la recolección: {e}")
             return
 
-def display_ask_real_ammount_table(request_ids: list):
+def display_ask_real_ammount_table():
     try:
-        df = pd.DataFrame(list_all_requests())
-        df = df[df["id"].isin(request_ids)]
-        df = df.explode("request_category")[["request_category"]]
-        df = df.drop_duplicates().reset_index(drop=True)
-        df.sort_values(by="request_category", inplace=True)
-        df["measure_type"] = df["request_category"].apply(lambda x: "m3" if x in ["Sólidos con aceite", "Aceites usados"] else "kg")
-        df["real_ammount"] = 0
-        df["request_category"] = df["request_category"].apply(lambda x: translate_categories([x])[0])
-        df.set_index("request_category", inplace=True)
+        df = pd.DataFrame(columns=['residue_category', 'measure_type', 'real_ammount'])
+        df.set_index("residue_category", inplace=True)
         real_ammount_table = st.data_editor(
             df,
             num_rows="dynamic",
             width="stretch",
-            # hide_index=True,
-            # disabled=["request_category"],
             column_config={
-                "request_category": st.column_config.SelectboxColumn(
+                "residue_category": st.column_config.SelectboxColumn(
                     "Categorías de residuos",
-                    options=sorted(translate_categories(get_enum_values("residue_type"))),
+                    options=mq.get_residuo_corriente_names(),
                     default=translate_categories(["Aceites usados"])[0],
                     required=True
                 ),
                 "measure_type": st.column_config.SelectboxColumn(
                     "Tipo de unidad",
-                    options=["kg", "m3"],
+                    options=get_enum_values("measure_unit"),
                     default="kg",
                     required=True
                 ),
@@ -687,21 +684,19 @@ def display_ask_real_ammount_table(request_ids: list):
         )
         return real_ammount_table
     except Exception as e:
-            st.write(f"No hay solicitudes pendientes disponibles")
+            st.exception(e)
 
 def insert_residues_collected(df: pd.DataFrame, pickup_id: int):
     try:
-        df["request_category"] = df["request_category"].apply(lambda x: translate_categories([x])[0])
+        df = df.reset_index()[["residue_category", "measure_type", "real_ammount"]]
+        df.set_index("residue_category", inplace=True)
         records = df.reset_index().to_dict('records')
-        print(f'Step 1: Records to insert: {records}')
         for record in records:
             record['pickup_id'] = pickup_id
-        print(f'Step 2: Records to insert with pickup_id: {records}')
         insert = supabase.table("residues_collected").insert(records).execute()
-        print(f'Step 3: Insert result: {insert}')
         return insert
     except Exception as e:
-        st.toast(f"Error inserting residues collected: {e}")
+        st.exception(e)
 
 @st.dialog("📋 Detalle de la recolección", width="large")
 def pickup_detail_view(pickup_id: int):
@@ -789,13 +784,13 @@ def select_pickup(pickup_id: int):
         ).eq("id", pickup_id).execute()
         return request.data[0] if request.data else None
     except Exception as e:
-        st.error(f"Error fetching pickup: {e.message}")
+        st.error(f"Error fetching pickup: {e}")
         return None
 
 def display_real_ammount_table(pickup_id: int):
     try:
         residues = supabase.table("residues_collected").select(
-            "request_category, measure_type, real_ammount"
+            "residue_category, measure_type, real_ammount"
         ).eq("pickup_id", pickup_id).execute()
         rows = pd.DataFrame(residues.data)
         if rows.empty:
@@ -810,7 +805,7 @@ def display_real_ammount_table(pickup_id: int):
             column_config={
                 "request_category": st.column_config.MultiselectColumn(
                     "Categorías de residuos",
-                    options=get_enum_values("residue_type"),
+                    options=get_enum_values("residue_category"),
                     color=mc.elevencolors
                 ),
                 "measure_type": "Tipo de unidad",
@@ -825,12 +820,16 @@ if 'authentication_status' not in ss:
 
 ### Main page code ###
 if ss["authentication_status"]:
+    userid = mauth.get_user_id(ss["username"])
+
 
     ### Navigation template ###
 
     ### Formulario de solicitud de servicio ###
-    mc.logout_and_home('./pages/residuos_peligrosos.py')    
-
+    mc.logout_and_home('./pages/residuos_peligrosos.py')
+    
+    if st.button('test button'):
+        st.write('Button clicked!')
     with st.container(border=True, height="stretch", width="stretch", horizontal_alignment="center"):
         st.write("##### Gestión de solicitudes")
         tabs0 = st.tabs(['Solicitudes', 'Recolecciones'])

@@ -6,6 +6,7 @@ import time
 from yaml.loader import SafeLoader
 import streamlit_authenticator as stauth
 import modules.common as mc
+import modules.auth as mauth
 
 ### Page specific imports ###
 import streamlit as st
@@ -40,12 +41,12 @@ def update_request_form(id:int, request_category_default:list, measure_type_defa
             )
         request_category = st.multiselect(
             "Categoria de los residuos",
-            options=get_enum_values("residue_type"),
+            options=get_enum_values("residue_category"),
             default=request_category_default
         )
         col1,col2 = st.columns(2)
         with col1:
-            measure_type = st.radio("Tipo de unidades", options=["m3", "kg"], index=["m3", "kg"].index(measure_type_default))
+            measure_type = st.selectbox("Tipo de unidades", options=get_enum_values("measure_unit"), index=get_enum_values("measure_unit").index(measure_type_default))
         with col2:
             estimated_amount = st.number_input("Cantidad estimada", min_value=0.1, step=0.1, value=float(estimated_amount_default))
         details = st.text_area("Comentarios", value=details_default)
@@ -55,21 +56,19 @@ def update_request_form(id:int, request_category_default:list, measure_type_defa
             mc.send_email(to_email=[ss["email"],mc.get_email().get('sostenibilidad')], operation='Update', supabase_return=request.data[0]),           
             st.toast("✅ Solicitud actualizada exitosamente")
             st.rerun()
+
 def update_request(request_id: int, request_category:list, measure_type: str, estimated_amount: float,details: str):
-    now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
-    print(now)
     try:
         request = supabase.table("requests").update({
             "request_category": request_category,
             "measure_type": measure_type,
             "estimated_amount": estimated_amount,
             "details": details,
-            "updated_at": now
         }).eq("id", request_id).execute()
         return request
 
     except Exception as e:
-        st.toast(f"❌ Error al actualizar la solicitud: {e.message}")
+        st.toast(f"❌ Error al actualizar la solicitud: {e}")
 
 def select_request(request_id: int):
     try:
@@ -78,22 +77,20 @@ def select_request(request_id: int):
         ).eq("id", request_id).execute()
         return request.data[0] if request.data else None
     except Exception as e:
-        st.toast(f"❌ Error al obtener la solicitud: {e.message}")
+        st.toast(f"❌ Error al obtener la solicitud: {e}")
         return None
 
 def cancel_request(ids: list):
-    now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
     try:
         for request_id in ids:
             supabase.table("requests").update(
                 {
-                    "status": "Cancelada",
-                    "updated_at": now
+                    "current_status": "Cancelada",
                  }
             ).eq("id", request_id).execute()
         return st.toast("✅ Solicitudes canceladas exitosamente")
     except Exception as e:
-        return st.toast(f"❌ Error al cancelar solicitudes: {e.message}")
+        return st.toast(f"❌ Error al cancelar solicitudes: {e}")
 
 def create_request_button():
     col1, col2, col3 = st.columns(3)
@@ -106,37 +103,33 @@ def get_enum_values(enum_name: str):
         result = supabase.rpc('get_types', {'enum_type': f'{enum_name}'}).execute()
         return sorted(result.data)
     except Exception as e:
-        print(f"Error fetching enum values: {e.message}")
+        print(f"Error fetching enum values: {e}")
 
-def create_request(username: str, request_category:list, measure_type: str, estimated_amount: float,details: str):
-    now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
+def create_request(userid: int, request_category:list, measure_type: str, estimated_amount: float,details: str):
     try:
         request = supabase.table("requests").insert({
-            "username": username,
+            "userid": userid,
             "request_category": request_category,
             "measure_type": measure_type,
             "estimated_amount": estimated_amount,
             "details": details,
-            "status": "Pendiente",
-            "admin_note": "",
-            "created_at": now,
-            "updated_at": now
+            "current_status": "Pendiente",
         }).execute()
         mc.send_email(to_email=[ss["email"],mc.get_email().get('sostenibilidad')], operation='Creation', supabase_return=request.data[0])
         st.toast("✅ Solicitud creada exitosamente")
         st.rerun()
         return request
     except Exception as e:
-        st.toast(f"❌ Error al crear la solicitud: {e.message}")
+        st.toast(f"❌ Error al crear la solicitud: {e}")
 
 def list_all_requests(limit=200):
     try:
         requests = supabase.table("requests").select(
-            "id, username, request_category, measure_type, estimated_amount, details, status, admin_note, created_at, updated_at"
+            "id, users(*), request_category, measure_type, estimated_amount, details, current_status, admin_note, created_at, updated_at"
         ).order("id", desc=True).limit(limit).execute()
         return requests.data
     except Exception as e:
-        st.toast(f"❌ Error al obtener las solicitudes: {e.message}") 
+        st.toast(f"❌ Error al obtener las solicitudes: {e}") 
 
 @st.dialog("Crear solicitud", width="medium")
 def create_request_form():
@@ -153,12 +146,12 @@ def create_request_form():
             )
         request_category = st.multiselect(
             "Categoria de los residuos",
-            options=get_enum_values("residue_type")
+            options=get_enum_values("residue_category")
             ,
         )
         col1,col2 = st.columns(2)
         with col1:
-            measure_type = st.radio("Tipo de unidades", options=["m3", "kg"])
+            measure_type = st.selectbox("Tipo de unidades", options=get_enum_values("measure_unit"), index=get_enum_values("measure_unit").index("kg"))
         with col2:
             estimated_amount = st.number_input("Cantidad estimada", min_value=0.1, step=0.1)
         details = st.text_area("Comentarios")
@@ -166,51 +159,53 @@ def create_request_form():
         if submitted:
             if mc.validate_residue_types(request_category) == False:
                 return
-            username = f"{ss["username"]}"
+            userid = mauth.get_user_id(ss["username"])
             try:        
-                create_request(username, request_category, measure_type, estimated_amount, details)
+                create_request(userid, request_category, measure_type, estimated_amount, details)
             except Exception as e:
-                st.toast(f"❌ Error al crear la solicitud: {e.message}")
+                st.toast(f"❌ Error al crear la solicitud: {e}")
 
-def display_pending_requests_table(requests_data, username):
+def display_pending_requests_table(requests_data, userid):
     try:   
         rows = pd.DataFrame(requests_data)
-        rows = rows[["id","username","status","request_category","measure_type","estimated_amount","created_at","updated_at"]]
-        rows = rows[(rows["status"] == "Pendiente") & (rows["username"] == username)]
+        rows = rows[["id","users","current_status","request_category","measure_type","estimated_amount","created_at","updated_at"]]
+        rows["userid"] = rows["users"].apply(lambda x: x["id"] if isinstance(x, dict) else x)
+        rows["username"] = rows["users"].apply(lambda x: x["username"] if isinstance(x, dict) else x)
+        rows = rows[(rows["current_status"] == "Pendiente") & (rows["userid"] == userid)]
+        rows = rows[["id","username","current_status","request_category","measure_type","estimated_amount","created_at","updated_at"]]
         if rows.empty:
             st.info(f"📭 No hay solicitudes pendientes disponibles")
             return
-        rows["created_at"] = pd.to_datetime(rows["created_at"])
-        rows["updated_at"] = pd.to_datetime(rows["updated_at"])
+        rows["created_at"] = pd.to_datetime(rows["created_at"]).dt.tz_convert('America/Bogota').dt.strftime("%d/%m/%Y %H:%M")
+        rows["updated_at"] = pd.to_datetime(rows["updated_at"]).dt.tz_convert('America/Bogota').dt.strftime("%d/%m/%Y %H:%M")
         rows.set_index("id", inplace=True)
         rows["Seleccionar"] = False
-
         displayed_table = st.data_editor(
             rows,
             width="stretch",
-            disabled=["id","status", "request_category", "measure_type", "estimated_amount", "created_at", "updated_at"], 
+            disabled=["id", "username","current_status", "request_category", "measure_type", "estimated_amount", "created_at", "updated_at"], 
             column_config={
                 "id": "ID",
+                "Seleccionar": st.column_config.CheckboxColumn(
+                    "Seleccionar",
+                    pinned=True
+                ),
+                "username": "Usuario",
+                "current_status": "Estado",
                 "request_category": st.column_config.MultiselectColumn(
                     "Categorías de residuos",
-                    options=get_enum_values("residue_type"),
+                    options=get_enum_values("residue_category"),
                     color=mc.elevencolors
                 ),
                 "measure_type": "Tipo de unidad",
                 "estimated_amount": "Cantidad estimada",
-                "status": st.column_config.MultiselectColumn(
+                "current_status": st.column_config.MultiselectColumn(
                     "Estado",
                     options=get_enum_values("status_type"),
                     color=["blue", "green", "red"]
                 ),
-                "created_at": st.column_config.DateColumn(
-                    "Fecha de creación",
-                    format="DD/MM/YY HH:mm"
-                ),
-                "updated_at": st.column_config.DateColumn(
-                    "Última modificación",
-                    format="DD/MM/YY HH:mm"
-                )
+                "created_at": "Fecha de creación",
+                "updated_at": "Última modificación"
             }
         )
         selected_count = displayed_table.Seleccionar.sum()
@@ -234,16 +229,19 @@ def display_pending_requests_table(requests_data, username):
     except Exception as e:
         st.info(f"📭 No hay solicitudes disponibles")
 
-def display_all_requests_table(requests_data, username):
+def display_all_requests_table(requests_data, userid):
     try:
         rows = pd.DataFrame(requests_data)
-        rows = rows[["id","username","status", "request_category","measure_type","estimated_amount", "admin_note","created_at", "updated_at"]]
-        rows = rows[rows["username"] == username]
+        rows = rows[["id","users","current_status","request_category","measure_type","estimated_amount","created_at","updated_at", "admin_note"]]
+        rows["userid"] = rows["users"].apply(lambda x: x["id"] if isinstance(x, dict) else x)
+        rows["username"] = rows["users"].apply(lambda x: x["username"] if isinstance(x, dict) else x)
+        rows = rows[(rows["userid"] == userid)]
+        rows = rows[["id","username","current_status","request_category","measure_type","estimated_amount","created_at","updated_at", "admin_note"]]
         if rows.empty:
-            st.info(f"📭 No hay solicitudes disponibles")
+            st.info(f"📭 No hay solicitudes pendientes disponibles")
             return
-        rows["created_at"] = pd.to_datetime(rows["created_at"])
-        rows["updated_at"] = pd.to_datetime(rows["updated_at"])
+        rows["created_at"] = pd.to_datetime(rows["created_at"]).dt.tz_convert('America/Bogota').dt.strftime("%d/%m/%Y %H:%M")
+        rows["updated_at"] = pd.to_datetime(rows["updated_at"]).dt.tz_convert('America/Bogota').dt.strftime("%d/%m/%Y %H:%M")
         rows.set_index("id", inplace=True)
 
         st.dataframe(
@@ -251,31 +249,27 @@ def display_all_requests_table(requests_data, username):
             width="stretch",
             column_config={
                 "id": "ID",
+                "username": "Usuario",
+                "current_status": "Estado",
                 "request_category": st.column_config.MultiselectColumn(
                     "Categorías de residuos",
-                    options=get_enum_values("residue_type"),
+                    options=get_enum_values("residue_category"),
                     color=mc.elevencolors
                 ),
                 "measure_type": "Tipo de unidad",
                 "estimated_amount": "Cantidad estimada",
-                "status": st.column_config.MultiselectColumn(
+                "current_status": st.column_config.MultiselectColumn(
                     "Estado",
                     options=get_enum_values("status_type"),
                     color=["blue", "green", "red"]
                 ),
-                "admin_note": "Nota del administrador",
-                "created_at": st.column_config.DateColumn(
-                    "Fecha de creación",
-                    format="DD/MM/YY HH:mm"
-                ),
-                "updated_at": st.column_config.DateColumn(
-                    "Última modificación",
-                    format="DD/MM/YY HH:mm"
-                )
+                "created_at": "Fecha de creación",
+                "updated_at": "Última modificación",
+                "admin_note": "Nota del administrador"
             }
         )
     except Exception as e:
-        st.write(f"No hay solicitudes disponibles")
+        st.info(f"📭 No hay solicitudes disponibles")
 
 @st.dialog("⚠️ Confirmar eliminación")
 def confirm_delete_dialog(request_ids: list):
@@ -302,6 +296,8 @@ if 'authentication_status' not in ss:
 ### Main page code ###
 if ss["authentication_status"]:
 
+    userid = mauth.get_user_id(ss["username"])
+
     ### Navigation template ###
 
     ### Formulario de solicitud de servicio ###
@@ -315,9 +311,9 @@ if ss["authentication_status"]:
     all_requests = list_all_requests()
     tab1, tab2 = st.tabs(["📄 Solicitudes pendientes", "📊 Todas las solicitudes"])
     with tab1:
-        display_pending_requests_table(all_requests, ss["username"])
+        display_pending_requests_table(all_requests, userid)
     with tab2:
-        display_all_requests_table(all_requests, ss["username"])
+        display_all_requests_table(all_requests, userid)
 
 else:
     st.switch_page("./pages/login_home.py")

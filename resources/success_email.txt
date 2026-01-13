@@ -3,7 +3,7 @@ Estimado colaborador.
 ​Su solicitud para la recolección de residuos ha sido creada exitosamente, una vez se programe la recolección se le notificará por este mismo medio la fecha correspondiente.
 
 Agradecemos su valioso aporte en nuestro camino hacia la sostenibilidad y el alcance de producciones más verdes. A continuación, se comparten los detalles de la solicitud realizada. 
-Número de solicitud: {id} 
+Id de solicitud: {id} 
 Fecha de registro: {date} 
 Estado actual: Pendiente por recolección Residuos declarados: {residues} 
 

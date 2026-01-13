@@ -24,6 +24,11 @@ email_password = os.getenv('EMAIL_PASSWORD')
 #         encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
 #     return encoded_string
 
+def utc_to_america_bogota(utc_dt: datetime) -> datetime:
+    """Convert UTC datetime to America/Bogota timezone."""
+    bogota_tz = timezone(timedelta(hours=-5))
+    return utc_dt.astimezone(bogota_tz)
+
 @st.dialog("Actiualizar")
 def update_details(authenticator):
     if authenticator.update_user_details(st.session_state.get('username'), fields={
@@ -70,7 +75,7 @@ def logout_and_home(previous_page: str = None):
             st.page_link(previous_page, label="⬅️ Atrás", width="stretch")
         st.page_link("./pages/login_home.py", label="🏠 Inicio", width="stretch")
         authenticator.logout(button_name='Cerrar sesión', location='main', use_container_width=True, key='logoutformats')
-        if st.button("Actualizar detalles de usuario", use_container_width=True):
+        if st.button("🚹 Cuenta", use_container_width=True):
             update_details(authenticator)
     with columns[2]:
         st.markdown(f"Sesión iniciada como: **{ss['name']}**")
@@ -181,7 +186,7 @@ def path_file(provider_nit, file_name, upload_file) -> str:
         ext = upload_file.type.split('/')[-1]
         return f"uploads/{provider_nit}_{file_name}.{ext}"
     except Exception as e:
-        st.toast(f"Error generando ruta de archivo: {e.message}")
+        st.toast(f"Error generando ruta de archivo: {e}")
 
 def path_files_multiple(provider_nit, file_name_prefix, upload_files) -> list:
     """Generate paths for multiple files."""
@@ -194,7 +199,7 @@ def path_files_multiple(provider_nit, file_name_prefix, upload_files) -> list:
             paths.append(path)
         return paths
     except Exception as e:
-        st.toast(f"Error generando rutas de archivos: {e.message}")
+        st.toast(f"Error generando rutas de archivos: {e}")
         return []
 
 def save_file(file_uploader, file_path) -> str:
@@ -203,13 +208,14 @@ def save_file(file_uploader, file_path) -> str:
             w.write(file_uploader.getvalue())
         return file_path
     except Exception as e:
-        st.toast(f"Error guardando archivo: {e.message}")
+        st.toast(f"Error guardando archivo: {e}")
     
 def send_email(to_email: list, operation: Literal['Creation', 'Schedule', 'Cancelled', 'Update'], supabase_return: dict):
     sender_email = 'no-reply@mywero.com.co'
     if operation == 'Creation':
         subject = f'Solicitud No. {supabase_return.get("id")} creada exitosamente'
         created_at = datetime.fromisoformat(supabase_return.get("created_at").replace('Z', '+00:00'))
+        created_at = utc_to_america_bogota(created_at)
         txt_content = open('./resources/success_email.txt').read().format(id=supabase_return.get("id"), date=created_at.strftime("%Y-%m-%d %H:%M:%S"), residues=', '.join(supabase_return.get("request_category", [])))
         html_content0 = open('./resources/success_email.html').read()
         html_content = html_content0.replace('{id:}', str(supabase_return.get("id"))).replace('{date:}', created_at.strftime("%Y-%m-%d %H:%M:%S")).replace('{residues:}', ', '.join(supabase_return.get("request_category", [])))
@@ -223,11 +229,12 @@ def send_email(to_email: list, operation: Literal['Creation', 'Schedule', 'Cance
     elif operation == 'Update':
         subject = f'Solicitud No. {supabase_return.get("id")} actualizada exitosamente'
         updated_at = datetime.fromisoformat(supabase_return.get("updated_at").replace('Z', '+00:00'))
+        updated_at = utc_to_america_bogota(updated_at)
         txt_content = open('./resources/request_update_email.txt').read().format(id=supabase_return.get("id"), date=updated_at.strftime("%Y-%m-%d %H:%M:%S"), residues=', '.join(supabase_return.get("request_category", [])))
         html_content0 = open('./resources/request_update_email.html').read()
         html_content = html_content0.replace('{id:}', str(supabase_return.get("id"))).replace('{date:}', updated_at.strftime("%Y-%m-%d %H:%M:%S")).replace('{residues:}', ', '.join(supabase_return.get("request_category", [])))
     elif operation == 'Cancelled':
-        subject = f'Recolección cancelada {supabase_return["id"]}'
+        subject = f'Recolección N° {supabase_return["id"]} cancelada'
         request_ids = [request['request_id'] for request in supabase_return['pickup_requests']]
         txt_content = open('./resources/cancel_email.txt').read().format(id=', '.join(map(str, request_ids)), cancel_reason=supabase_return['admin_note'])
         html_content0 = open('./resources/cancel_email.html').read().replace('{id:}', ', '.join(map(str, request_ids))).replace('{cancel_reason:}', supabase_return['admin_note'])

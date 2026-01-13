@@ -4,3 +4,6 @@ later/
 __pycache__/
 uploads/
 config.yaml
+*.temp
+testing/
+*/seed.sql

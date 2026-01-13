@@ -5,7 +5,7 @@ Estimado colaborador.
 
 Su solicitud para la recolección de residuos ha sido programada exitosamente. A continuación, se comparten los detalles de la solicitud programada.
 
-    Número de solicitudes asociadas: {id}
+    Id de solicitudes asociadas: {id}
     Fecha de recolección programada: {pickup_date}
     Estado actual: Programada
 
