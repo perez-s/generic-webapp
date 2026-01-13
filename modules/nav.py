@@ -144,6 +144,20 @@ def requests_manage_tile():
     if requests_manage:
         st.switch_page("./pages/request_manage.py")
 
+def technical_docs_tile():
+    technical_docs = streamlit_tile(
+        label="Documentos Técnicos",
+        title="Documentos Técnicos",
+        description="Gestiona la documentación técnica del sistema",
+        icon="📑",
+        color_theme="blue",
+        height=hpixels,
+        width=wpixels,
+        key="technical_docs_tile"
+    )
+    if technical_docs:
+        st.switch_page("./pages/technical_docs.py")
+
 def mail_test_tile():
     mail_test = streamlit_tile(
         label="Test Email",
@@ -204,16 +218,16 @@ def MenuButtons(location: Literal['residuos_peligrosos', 'home', 'residuos_solid
         
         elif location == 'residuos_peligrosos':
             if ss.username in caracol:
-                caracol_tiles = [providers_tile, requests_tile, requests_manage_tile]
+                caracol_tiles = [providers_tile, requests_tile, requests_manage_tile, technical_docs_tile]
                 render_tiles(caracol_tiles)
 
             if ss.username in caracol_users:
-                caracol_user_tiles = [requests_tile]
+                caracol_user_tiles = [requests_tile, technical_docs_tile]
                 render_tiles(caracol_user_tiles)
 
             if ss.username in wero:
                 # wero_tiles = [providers_tile, requests_tile, requests_manage_tile, mail_test_tile]
-                wero_tiles = [providers_tile, requests_tile, requests_manage_tile]
+                wero_tiles = [providers_tile, requests_tile, requests_manage_tile, technical_docs_tile]
                 render_tiles(wero_tiles)
 
         elif location == 'residuos_solidos':

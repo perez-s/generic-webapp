@@ -50,7 +50,7 @@ CREATE TABLE if NOT exists public.residuo_corriente (
 
 CREATE TABLE if NOT exists public.users (
     id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-    username text NOT NULL,
+    username text NOT NULL UNIQUE,
     CONSTRAINT users_pkey PRIMARY KEY (id)
 );
 
