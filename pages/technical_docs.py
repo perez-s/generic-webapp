@@ -231,7 +231,7 @@ def view_documents_section():
         st.error(f"❌ Error al mostrar documentos: {str(e)}")
         st.info("📭 No hay documentos disponibles")
 
-@st.dialog("Ver Documento", width="medium")
+@st.dialog("Ver Documento", width="large")
 def view_document(doc_id: str):
     """Display document viewer."""
     result = get_document_file(doc_id)
@@ -263,13 +263,9 @@ def view_document(doc_id: str):
     if mime_type == 'application/pdf':
         st.divider()
         st.markdown("**Vista Previa:**")
-        # Use base64 to display PDF
-        import base64
-        base64_pdf = base64.b64encode(file_bytes).decode('utf-8')
-        pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="800" type="application/pdf"></iframe>'
-        st.markdown(pdf_display, unsafe_allow_html=True)
+        st.pdf(file_bytes, height=800)
 
-@st.dialog("✏️ Editar Documento", width="medium")
+@st.dialog("✏️ Editar Documento", width="large")
 def edit_document_form(doc: dict):
     """Form for editing a document."""
     with st.form(f"edit_form_{doc['id']}"):
