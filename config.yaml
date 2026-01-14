@@ -30,7 +30,7 @@ credentials:
       failed_login_attempts: 0
       logged_in: true
       name: Sostenibilidad
-      password: $2b$12$5Wu2FI0MBQqDuvgfnk7JHe9OdtOdcr7mM.7RVfYkTjbgjHJOLubNy
+      password: $2b$12$4rUb5H8kGHxrR8jVu60OQOPRbvRVgY9zdL9tn.OO.QDhQcrq0gNsy
       role: caracol
     sst:
       email: app+sst@mywero.com.co
