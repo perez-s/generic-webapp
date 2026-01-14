@@ -158,7 +158,7 @@ def update_provider_form(id: int,provider_name_default: str, provider_nit_defaul
             provider_website = st.text_input("Sitio web (opcional)", value=provider_website_default, placeholder="https://ejemplo.com")
             provider_category = st.multiselect(
                 "Tipos de residuos",
-                options=mq.get_residuo_corriente_names(),
+                options=get_enum_values('residue_category'),
                 default=provider_category_default
             )
             provider_auth_activities = st.multiselect(
