@@ -77,7 +77,7 @@ def upload_document_section():
         
         uploaded_file = st.file_uploader(
             "Seleccionar Archivo*",
-            type=['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'jpg', 'jpeg', 'png'],
+            type=['pdf'],
             help="Formatos permitidos: PDF, Word, Excel, TXT, Imágenes"
         )
         
@@ -231,7 +231,7 @@ def view_documents_section():
         st.error(f"❌ Error al mostrar documentos: {str(e)}")
         st.info("📭 No hay documentos disponibles")
 
-@st.dialog("Ver Documento", width="wide")
+@st.dialog("Ver Documento", width="medium")
 def view_document(doc_id: str):
     """Display document viewer."""
     result = get_document_file(doc_id)
@@ -269,7 +269,7 @@ def view_document(doc_id: str):
         pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="800" type="application/pdf"></iframe>'
         st.markdown(pdf_display, unsafe_allow_html=True)
 
-
+@st.dialog("✏️ Editar Documento", width="medium")
 def edit_document_form(doc: dict):
     """Form for editing a document."""
     with st.form(f"edit_form_{doc['id']}"):
@@ -290,7 +290,7 @@ def edit_document_form(doc: dict):
         st.markdown("**Reemplazar archivo (opcional):**")
         new_file = st.file_uploader(
             "Nuevo Archivo",
-            type=['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'jpg', 'jpeg', 'png'],
+            type=['pdf'],
             key=f"edit_file_{doc['id']}",
             label_visibility="collapsed"
         )
