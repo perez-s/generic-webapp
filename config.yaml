@@ -4,83 +4,55 @@ cookie:
   name: session_cookie_name
 credentials:
   usernames:
-    acoplasticos:
-      email: acoplasticos@gmail.com
-      failed_login_attempts: 0
-      logged_in: false
-      name: Acoplasticos
-      password: $2b$12$gfV/ny1JwjoJUd1GjXv06euklMLyqYbg3sDl9U3/lEesDro3XRGHe
-      role: admin
     almacen:
-      email: perez14sebastian+almacen@gmail.com
+      email: app+almacen@mywero.com.co
       failed_login_attempts: 0
       logged_in: false
       name: Almacen
-      password: $2b$12$0ZPsSv5YmuVPNINXQWWedu92R4GkVOWPRLCMcNtnjw2RUjmi1zZhe
+      password: $2b$12$mAoI9Q/0T1Wn0hy65fwFN.CpaUA15dbPgUVDT7XATWEmtKFHIo8sy
       role: caracol_users
-    caracol:
-      email: perez14sebastian+caracol@gmail.com
-      failed_login_attempts: 0
-      logged_in: false
-      name: Caracol
-      password: $2b$12$aa5WVOL6abDpsUpHafLvIOokcd/Br7UTb7AGwJB.TOi/mmbYLraHS
-      role: caracol
     mantenimiento:
-      email: perez14sebastian+mantenimiento@gmail.com
+      email: app+mantenimiento@mywero.com.co
       failed_login_attempts: 0
       logged_in: false
       name: Mantenimiento
-      password: $2b$12$FcznG6HfbTqBrkVKK1FCkuparOChwdQ8s3.MHl4TgZtCc2yIW4F6S
+      password: $2b$12$juBp/hgBiZk0rcnymWIWi.yUj/97G7/FAA99Iqa2B4FQ1tcodJAF2
       role: caracol_users
     sedes:
-      email: perez14sebastian+sedes@gmail.com
+      email: app+sedes@mywero.com.co
       failed_login_attempts: 0
       logged_in: false
       name: Sedes
-      password: $2b$12$SpTTS5crDcW5gqzc3UWsTen.Bg6yuRcsBSfcNo.fgAhU./XKk9DXm
+      password: $2b$12$oOrI/cKM0KAtclKHmSLumez.tsM8LzDUSjVPy2rUBOocu8qilVbSy
       role: caracol_users
     sostenibilidad:
-      email: perez14sebastian+sostenibilidad@gmail.com
+      email: app+sostenibilidad@mywero.com.co
       failed_login_attempts: 0
       logged_in: true
       name: Sostenibilidad
-      password: $2b$12$Yjz8uCtowWH4xAqBng/lIOaLGB6S8OYlecyAeGqdcnpkTAgFMjT42
-      role: caracol_users
+      password: $2b$12$5Wu2FI0MBQqDuvgfnk7JHe9OdtOdcr7mM.7RVfYkTjbgjHJOLubNy
+      role: caracol
     sst:
-      email: perez14sebastian+sst@gmail.com
+      email: app+sst@mywero.com.co
       failed_login_attempts: 0
       logged_in: false
       name: SST
-      password: $2b$12$ifI.VqCU3Mz0s13kBY72suKm8B4IxYpgmSS5wMaTiTAR67fHUhPbC
+      password: $2b$12$34mFitoSZ51UnRSu/HeCP.DklzSWKing2xzK.Xhyy91DQWW2WY4du
       role: caracol_users
     ti:
-      email: perez14sebastian+ti@gmail.com
+      email: app+ti@mywero.com.co
       failed_login_attempts: 0
       logged_in: false
       name: Ti
-      password: $2b$12$u.ekDC11ZUO81tdztyUdDOv4nrwu5JxqQ2iD1hjmXdPmTXhfE1fUW
+      password: $2b$12$SX/BYQ2QznCNNMTacMtDduFqtf5lhKf6YBE8vslokLWHIrldMY42e
       role: caracol_users
-    wero:
-      email: perez14sebastian+wero@gmail.com
-      failed_login_attempts: 0
-      logged_in: true
-      name: Wero
-      password: $2b$12$JtGhOwtOMttoDISYQwy9zenCwU16Z7vdpti39463IK/.uP75HeVWm
-      role: user
     wero-caracol:
-      email: perez14sebastian+wero-caracol@gmail.com
+      email: app+wero-caracol@mywero.com.co
       failed_login_attempts: 0
       logged_in: true
       name: Wero Caracol
-      password: $2b$12$LNs921eIyRPTrxEchDYbnuA/FernrU4NHNFrhMaRMZTs3HJGQzHmq
+      password: $2b$12$OUpzEiOMAe0OUW9iiW5ChO9bc6dqnHvPlV3knlrYRrD7jE984wIh6
       role: wero
-    wero2:
-      email: perez14sebastian+wero2@gmail.com
-      failed_login_attempts: 0
-      logged_in: true
-      name: Wero2
-      password: $2b$12$8qqQb84ylw2SyEpNtjHum.hEZoiPXdx/w8YxX0bjeh0IVFuix6JpO
-      role: user2
 preauthorized:
   emails:
   - melsby@gmail.com
