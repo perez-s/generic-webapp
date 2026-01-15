@@ -2,10 +2,63 @@ import streamlit as st
 from streamlit import session_state as ss
 from streamlit_tile import streamlit_tile
 from typing import Literal
+import os
+from supabase import create_client, Client
+from dotenv import load_dotenv
 
 hpixels = 200
 wpixels = 1000000000
 
+load_dotenv()
+supabase_url = os.getenv("SUPABASE_URL")
+supabase_key = os.getenv("SUPABASE_KEY")
+supabase: Client = create_client(supabase_url, supabase_key)
+
+def completed_request_count(category: str = None):
+    response = supabase.table('residues_collected').select('*')
+    if category is not None:
+        response = response.eq('category', category)
+    response = response.execute()
+    return len(set(item['pickup_id'] for item in response.data if item.get('pickup_id') is not None))
+
+def kg_collected_total(category: str = None):
+    query = supabase.table('residues_collected').select('real_ammount').eq('measure_type', 'kg')
+    if category is not None:
+        query = query.eq('category', category)
+    response = query.execute()
+    total_kg = sum(item['real_ammount'] for item in response.data if item['real_ammount'] is not None)
+    return total_kg
+
+def display_metric(col,title,data,color="normal",delta=None,border=True):
+    with col:
+        st.metric(title, data, border=border, delta_color=color, delta=delta, delta_arrow="off")
+
+def display_home_dashboard():
+    with st.container(border=True):
+        st.subheader("🗑️ Residuos Sólidos")
+        cols = st.columns(2)
+        display_metric(cols[0], "**✅ Recolecciones gestionadas**", completed_request_count())
+        display_metric(cols[1], "**⚖️ Kg gestionados**", f"{kg_collected_total():,.0f} kg")
+        with cols[0]:
+            cols1 = st.columns(4)
+            display_metric(cols1[0], "**🏗️ RCD**", completed_request_count('RCD'), delta=" ", color="normal")
+            display_metric(cols1[1], "**🗑️ Ordinarios**", completed_request_count('Ordinarios'), delta=" ", color="normal")
+            display_metric(cols1[2], "**🪵 Madera**", completed_request_count('Madera'), delta=" ", color="normal")
+            display_metric(cols1[3], "**☣️ RESPEL**", completed_request_count('RESPEL'), delta=" ", color="normal")
+        with cols[1]:
+            cols1 = st.columns(4)
+            total_kg = kg_collected_total()
+            if total_kg > 0:
+                display_metric(cols1[0], "**🏗️ RCD**", f"{kg_collected_total('RCD')*100/total_kg:0.0f} %", delta=f"{kg_collected_total('RCD')} kg",color="normal")
+                display_metric(cols1[1], "**🗑️ Ordinarios**", f"{kg_collected_total('Ordinarios')*100/total_kg:0.0f} %", delta=f"{kg_collected_total('Ordinarios')} kg",color="normal")
+                display_metric(cols1[2], "**🪵 Madera**", f"{kg_collected_total('Madera')*100/total_kg:0.0f} %", delta=f"{kg_collected_total('Madera')} kg",color="normal")
+                display_metric(cols1[3], "**☣️ RESPEL**", f"{kg_collected_total('RESPEL')*100/total_kg:0.0f} %", delta=f"{kg_collected_total('RESPEL')} kg",color="normal")
+            else:
+                display_metric(cols1[0], "**🏗️ RCD**", "0 %", delta="0 kg",color="normal")
+                display_metric(cols1[1], "**🗑️ Ordinarios**", "0 %", delta="0 kg",color="normal")
+                display_metric(cols1[2], "**🪵 Madera**", "0 %", delta="0 kg",color="normal")
+                display_metric(cols1[3], "**☣️ RESPEL**", "0 %", delta="0 kg",color="normal")
+       
 def energia_tile():
     energia = streamlit_tile(
         label="Energía",
@@ -182,6 +235,19 @@ def render_tiles(tiles_to_render: list):
             if counter > 2:
                 counter = 0
 
+def aforos_tile():
+    aforos = streamlit_tile(
+        label="Aforos",
+        title="Aforos",
+        description="Monitorea y gestiona los aforos",
+        icon="📊",
+        color_theme="blue",
+        height=hpixels,
+        width=wpixels,
+        key="aforos_tile"
+    )
+    if aforos:
+        st.switch_page("./pages/aforos.py")
 
 def MenuButtons(location: Literal['residuos_peligrosos', 'home', 'residuos_solidos'], user_roles=None):
 
@@ -202,11 +268,14 @@ def MenuButtons(location: Literal['residuos_peligrosos', 'home', 'residuos_solid
         caracol = [k for k, v in user_roles.items() if v == 'caracol']
         caracol_users = [k for k, v in user_roles.items() if v == 'caracol_users']
         wero = [k for k, v in user_roles.items() if v == 'wero']
+        testing = [k for k, v in user_roles.items() if v == 'testing']
+
 
         # Show page 1 if the username that logged in is an admin.
         if location == 'home':
             if ss.username in caracol:
                 caracol_tiles = [energia_tile, agua_tile, residuos_tile]
+                display_home_dashboard()
                 render_tiles(caracol_tiles)
 
             if ss.username in caracol_users:
@@ -214,7 +283,11 @@ def MenuButtons(location: Literal['residuos_peligrosos', 'home', 'residuos_solid
 
             if ss.username in wero:
                 wero_tiles = [agua_tile, residuos_tile, energia_tile]
+                display_home_dashboard()
                 render_tiles(wero_tiles)
+
+            if ss.username in testing:
+                st.switch_page("./pages/aforos.py")
         
         elif location == 'residuos_peligrosos':
             if ss.username in caracol:

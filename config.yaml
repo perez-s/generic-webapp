@@ -39,6 +39,13 @@ credentials:
       name: SST
       password: $2b$12$bp2co.2ntMi1kr3CKroq9OlLN2XqBr8BijXj8Hc0e1lBBW55aEXNy
       role: caracol_users
+    testing:
+      email: testing@mywero.com.co
+      failed_login_attempts: 0
+      logged_in: true
+      name: Testing
+      password: $2b$12$KU6pRX3E0riGN/wecdJLkOzEALpgbAG4IhIIugpaXYUOTNMsHHGYW
+      role: testing
     ti:
       email: app+ti@mywero.com.co
       failed_login_attempts: 0

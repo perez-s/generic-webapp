@@ -74,9 +74,10 @@ def logout_and_home(previous_page: str = None):
         if previous_page:
             st.page_link(previous_page, label="⬅️ Atrás", width="stretch")
         st.page_link("./pages/login_home.py", label="🏠 Inicio", width="stretch")
-        authenticator.logout(button_name='Cerrar sesión', location='main', use_container_width=True, key='logoutformats')
+    with columns[4]:    
         if st.button("🚹 Cuenta", use_container_width=True):
             update_details(authenticator)
+        authenticator.logout(button_name='Cerrar sesión', location='main', use_container_width=True, key='logoutformats')
     with columns[2]:
         st.markdown(f"Sesión iniciada como: **{ss['name']}**")
     with columns[6]:

@@ -868,9 +868,7 @@ if ss["authentication_status"]:
 
     ### Formulario de solicitud de servicio ###
     mc.logout_and_home('./pages/residuos_peligrosos.py')
-    
-    if st.button('test button'):
-        st.write('Button clicked!')
+
     with st.container(border=True, height="stretch", width="stretch", horizontal_alignment="center"):
         st.write("##### Gestión de solicitudes")
         tabs0 = st.tabs(['Solicitudes', 'Recolecciones'])
