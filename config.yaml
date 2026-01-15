@@ -9,47 +9,47 @@ credentials:
       failed_login_attempts: 0
       logged_in: false
       name: Almacen
-      password: $2b$12$mAoI9Q/0T1Wn0hy65fwFN.CpaUA15dbPgUVDT7XATWEmtKFHIo8sy
+      password: $2b$12$vM8LWEMcJyGA/NLBV9im4uIlU7hnUp4fyQ29XsH7w4qc5qx2NkwsC
       role: caracol_users
     mantenimiento:
       email: app+mantenimiento@mywero.com.co
       failed_login_attempts: 0
       logged_in: false
       name: Mantenimiento
-      password: $2b$12$juBp/hgBiZk0rcnymWIWi.yUj/97G7/FAA99Iqa2B4FQ1tcodJAF2
+      password: $2b$12$1YFo8.9z7d1D2hagI/3hK.MWbX7IcjzU05PoILBbpB1IOvXSV2wh2
       role: caracol_users
     sedes:
       email: app+sedes@mywero.com.co
       failed_login_attempts: 0
       logged_in: false
       name: Sedes
-      password: $2b$12$oOrI/cKM0KAtclKHmSLumez.tsM8LzDUSjVPy2rUBOocu8qilVbSy
+      password: $2b$12$uUxZrnixGXrBMjAzfb44ku5wUovTEWJ8.txEoTwDdfWzht9fSL1y.
       role: caracol_users
     sostenibilidad:
       email: app+sostenibilidad@mywero.com.co
       failed_login_attempts: 0
       logged_in: true
       name: Sostenibilidad
-      password: $2b$12$4rUb5H8kGHxrR8jVu60OQOPRbvRVgY9zdL9tn.OO.QDhQcrq0gNsy
+      password: $2b$12$52ipmhbjDLJvKiEwCctgl.ud7e0vcJyUkA.7bkJXRMO2ihZYfNDQa
       role: caracol
     sst:
       email: app+sst@mywero.com.co
       failed_login_attempts: 0
       logged_in: false
       name: SST
-      password: $2b$12$34mFitoSZ51UnRSu/HeCP.DklzSWKing2xzK.Xhyy91DQWW2WY4du
+      password: $2b$12$bp2co.2ntMi1kr3CKroq9OlLN2XqBr8BijXj8Hc0e1lBBW55aEXNy
       role: caracol_users
     ti:
       email: app+ti@mywero.com.co
       failed_login_attempts: 0
       logged_in: false
       name: Ti
-      password: $2b$12$SX/BYQ2QznCNNMTacMtDduFqtf5lhKf6YBE8vslokLWHIrldMY42e
+      password: $2b$12$4lDzBStBXWEjiQuva1WS2OBi2.cZEzXNcckiopgS/FmZhRyYWqFRy
       role: caracol_users
     wero-caracol:
       email: app+wero-caracol@mywero.com.co
       failed_login_attempts: 0
-      logged_in: true
+      logged_in: false
       name: Wero Caracol
       password: $2b$12$OUpzEiOMAe0OUW9iiW5ChO9bc6dqnHvPlV3knlrYRrD7jE984wIh6
       role: wero

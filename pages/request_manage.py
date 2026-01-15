@@ -682,6 +682,27 @@ def display_ask_real_ammount_table():
                 )
             }
         )
+        
+        # Calculate total in kg
+        if not real_ammount_table.empty:
+            conversion_factors = {
+                'kg': 1,
+                'g': 0.001,
+                't': 1000,
+                'ton': 1000,
+                'mg': 0.000001,
+                'l': 1
+            }
+            
+            total_kg = 0
+            for idx, row in real_ammount_table.iterrows():
+                measure = row['measure_type']
+                amount = row['real_ammount']
+                factor = conversion_factors.get(measure, 1)
+                total_kg += amount * factor
+            
+            st.metric("Total", f"{total_kg:.2f} kg")
+        
         return real_ammount_table
     except Exception as e:
             st.exception(e)
@@ -812,6 +833,26 @@ def display_real_ammount_table(pickup_id: int):
                 "real_ammount": "Cantidad recolectada"
             }
         )
+        
+        # Calculate total in kg
+        if not displayed_table.empty:
+            conversion_factors = {
+                'kg': 1,
+                'g': 0.001,
+                't': 1000,
+                'ton': 1000,
+                'mg': 0.000001,
+                'l': 1
+            }
+            
+            total_kg = 0
+            for idx, row in displayed_table.iterrows():
+                measure = row['measure_type']
+                amount = row['real_ammount']
+                factor = conversion_factors.get(measure, 1)
+                total_kg += amount * factor
+            
+            st.metric("Total", f"{total_kg:.2f} kg")
     except Exception as e:
             st.write(f"No hay materiales recolectados disponibles [{e}]")
 
