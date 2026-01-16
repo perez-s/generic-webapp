@@ -45,7 +45,7 @@ if 'authentication_status' not in ss:
 
 if ss["authentication_status"]:
 
-    mc.logout_and_home('./pages/home.py', layout='wide')
+    mc.logout_and_home('./pages/home.py', layout='centered')
 
     st.subheader("📥 Registro de Aforos")
 

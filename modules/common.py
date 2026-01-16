@@ -70,7 +70,7 @@ def logout_and_home(previous_page: str = None, layout: str = "wide"):
     if 'authapp' not in ss:
         ss.authapp = authenticator
     if layout == 'centered':
-        st.set_page_config(page_title="Weroapp", page_icon="./resources/alpha-w-circle-custom.png", layout=layout)
+        st.set_page_config(page_title="Weroapp", page_icon="./resources/alpha-w-circle-custom.png", layout="wide")
         st.markdown("""
             <style>
                 .block-container {
