@@ -249,6 +249,20 @@ def aforos_tile():
     if aforos:
         st.switch_page("./pages/aforos.py")
 
+def entry_forms_tile():
+    entry_forms = streamlit_tile(
+        label="Formularios de entrada",
+        title="Formularios de entrada",
+        description="Gestiona los formularios de entrada de datos",
+        icon="📝",
+        color_theme="blue",
+        height=hpixels,
+        width=wpixels,
+        key="entry_forms_tile"
+    )
+    if entry_forms:
+        st.switch_page("./pages/entry_forms.py")
+
 def MenuButtons(location: Literal['residuos_peligrosos', 'home', 'residuos_solidos'], user_roles=None):
 
     if user_roles is None:

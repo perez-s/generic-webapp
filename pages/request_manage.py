@@ -522,7 +522,7 @@ def cancel_pickup_form(pickup_ids: list):
         st.toast("✅ Recolección cancelada exitosamente")
         st.rerun()
     if cols[0].button("⬅️ Volver", width="stretch"):
-        st.close_dialog()
+        st.rerun()
 
 @st.dialog("Editar recolección", width="medium")
 def update_pickup_form(pickup_id: int):

@@ -4,3 +4,6 @@ streamlit==1.51.0
 streamlit-authenticator==0.4.2
 streamlit-tile==4.1.0
 supabase==2.23.3
+streamlit-drawable-canvas
+matplotlib
+plotly

@@ -54,8 +54,8 @@ def protected_content():
         unsafe_allow_html=True
     )
   
-def logout_and_home(previous_page: str = None):
-    st.set_page_config(page_title="Weroapp", page_icon="./resources/alpha-w-circle-custom.png", layout="wide")
+def logout_and_home(previous_page: str = None, layout: str = "wide"):
+    st.set_page_config(page_title="Weroapp", page_icon="./resources/alpha-w-circle-custom.png", layout=layout)
     st.markdown("""
         <style>
             .block-container {
@@ -69,19 +69,27 @@ def logout_and_home(previous_page: str = None):
     authenticator = stauth.Authenticate('config.yaml')
     if 'authapp' not in ss:
         ss.authapp = authenticator
-    columns = st.columns([1,1,2,1,1,1,2])
-    with columns[0]:
-        if previous_page:
-            st.page_link(previous_page, label="⬅️ Atrás", width="stretch")
-        st.page_link("./pages/login_home.py", label="🏠 Inicio", width="stretch")
-    with columns[4]:    
-        if st.button("🚹 Cuenta", use_container_width=True):
-            update_details(authenticator)
-        authenticator.logout(button_name='Cerrar sesión', location='main', use_container_width=True, key='logoutformats')
-    with columns[2]:
-        st.markdown(f"Sesión iniciada como: **{ss['name']}**")
-    with columns[6]:
-        st.image("./resources/Logo2.png", width="stretch")
+    if layout == 'centered':
+        columns = st.columns([2,1,2])
+        with columns[0]:
+            st.markdown(f"Sesión iniciada como: **{ss['name']}**")
+            authenticator.logout(button_name='Cerrar sesión', location='main', use_container_width=True, key='logoutformats')
+        with columns[2]:
+            st.image("./resources/Logo2.png", width="stretch")
+    if layout == 'wide':
+        columns = st.columns([1,1,2,1,1,1,2])
+        with columns[0]:
+            if previous_page:
+                st.page_link(previous_page, label="⬅️ Atrás", width="stretch")
+            st.page_link("./pages/login_home.py", label="🏠 Inicio", width="stretch")
+        with columns[4]:    
+            if st.button("🚹 Cuenta", use_container_width=True):
+                update_details(authenticator)
+            authenticator.logout(button_name='Cerrar sesión', location='main', use_container_width=True, key='logoutformats')
+        with columns[2]:
+            st.markdown(f"Sesión iniciada como: **{ss['name']}**")
+        with columns[6]:
+            st.image("./resources/Logo2.png", width="stretch")
 
     st.divider()
 
