@@ -45,7 +45,7 @@ if 'authentication_status' not in ss:
 
 if ss["authentication_status"]:
 
-    mc.logout_and_home('./pages/home.py', layout='centered')
+    mc.logout_and_home('./pages/home.py', layout='wide')
 
     st.subheader("📥 Registro de Aforos")
 
@@ -105,53 +105,61 @@ if ss["authentication_status"]:
         fecha_date = datetime.now().date()
         fecha_time = datetime.now().time()
         observaciones = st.text_area("Observaciones")
-        weight_available = st.radio("¿Hay pesaje disponible?", options=['Si', 'No'], index=0, horizontal=True)
-        if weight_available == 'Si':
-            peso_df = pd.DataFrame(columns=["Item", "Peso (kg)"])
-            displayed_df = st.data_editor(
-                peso_df,
-                num_rows="dynamic",
-                use_container_width=True,
-                column_config={
-                    "Item": st.column_config.SelectboxColumn(
-                        "Item",
-                        options=["cartón", "plástico", "vidrio", "metal", "madera", "electrónicos", "otros"],
-                    ),
-                    "Peso (kg)": st.column_config.NumberColumn(
-                        "Peso (kg)",
-                        format="%f",
-                    ),
-                },
-            )
+        is_there_residues = st.radio("¿Hay residuos?", options=['Si', 'No'], index=1, horizontal=True)
+        if is_there_residues == 'No':
+            st.info("No hay residuos para registrar en este aforo.")
+            st.camera_input("Tomar evidencia fotográfica de la fachada")
 
-            # with columns[0]:
-            #     item = st.selectbox("Item", options=[""] + ["cartón", "plástico", "vidrio", "metal", "madera", "electrónicos", "otros"], index=0)
-            # with columns[1]:
-            #     peso = st.number_input("Peso (kg)", format="%f")
-        if weight_available == 'No':
-            volumen_df = pd.DataFrame(columns=["Tipo de contenedor", "Cantidad"])
-            displayed_df = st.data_editor(
-                volumen_df,
-                num_rows="dynamic",
-                use_container_width=True,
-                column_config={
-                    "Tipo de contenedor": st.column_config.SelectboxColumn(
-                        "Tipo de contenedor",
-                        options=["Bolsas", "Contenedores", "Tarros", "Sacos", "Palets"],
-                    ),
-                    "Cantidad": st.column_config.NumberColumn(
-                        "Cantidad",
-                        format="%f",
-                    ),
-                },
-            )
-            # with columns[0]:
-            #     container_options = ["", "Bolsas", "Contenedores", "Tarros", "Sacos", "Palets"]
-            #     tipo_contenedor = st.selectbox("Tipo de contenedor", options=container_options, index=0)
-            # with columns[1]:
-            #     cantidad = st.number_input("Cantidad", format="%f")
-            
-        # Allow selecting a container type if weighing isn't available
+        if is_there_residues == 'Si':
+            weight_available = st.radio("¿Hay pesaje disponible?", options=['Si', 'No'], index=0, horizontal=True)
+            if weight_available == 'Si':
+                peso_df = pd.DataFrame(columns=["Item", "Peso (kg)"])
+                displayed_df = st.data_editor(
+                    peso_df,
+                    num_rows="dynamic",
+                    column_config={
+                        "Item": st.column_config.SelectboxColumn(
+                            "Item",
+                            options=["cartón", "plástico", "vidrio", "metal", "madera", "electrónicos", "otros"],
+                        ),
+                        "Peso (kg)": st.column_config.NumberColumn(
+                            "Peso (kg)",
+                            format="%f",
+                        ),
+                    },
+                )
+                total_weight = displayed_df["Peso (kg)"].sum()
+                st.markdown(f"**Peso Total:** {total_weight:.2f} kg")
+                # with columns[0]:
+                #     item = st.selectbox("Item", options=[""] + ["cartón", "plástico", "vidrio", "metal", "madera", "electrónicos", "otros"], index=0)
+                # with columns[1]:
+                #     peso = st.number_input("Peso (kg)", format="%f")
+            if weight_available == 'No':
+                volumen_df = pd.DataFrame(columns=["Item", "Tipo de contenedor", "Cantidad"])
+                displayed_df = st.data_editor(
+                    volumen_df,
+                    num_rows="dynamic",
+                    column_config={
+                        "Item": st.column_config.SelectboxColumn(
+                            "Item",
+                            options=["cartón", "plástico", "vidrio", "metal", "madera", "electrónicos", "otros"],
+                        ),
+                        "Tipo de contenedor": st.column_config.SelectboxColumn(
+                            "Tipo de contenedor",
+                            options=["Bolsas", "Contenedores", "Tarros", "Sacos", "Palets"],
+                        ),
+                        "Cantidad": st.column_config.NumberColumn(
+                            "Cantidad",
+                            format="%f",
+                        ),
+                    },
+                )
+                # with columns[0]:
+                #     container_options = ["", "Bolsas", "Contenedores", "Tarros", "Sacos", "Palets"]
+                #     tipo_contenedor = st.selectbox("Tipo de contenedor", options=container_options, index=0)
+                # with columns[1]:
+                #     cantidad = st.number_input("Cantidad", format="%f")
+            # Allow selecting a container type if weighing isn't available
 
         firma = st.button("Firmar Aforo")
 
