@@ -15,6 +15,9 @@ mc.protected_content()
 @st.dialog("Firma Aforo")
 def firma_dialog():
 
+    nombre = st.text_input("Nombre completo")
+    cedula = st.number_input("Cédula", min_value=0, step=1)
+
     canvas_result = st_canvas(
         fill_color="rgba(255, 165, 0, 0.3)",  # Fixed fill color with some opacity
         update_streamlit=True,
@@ -22,8 +25,6 @@ def firma_dialog():
         key="canvas",
     )
  
-    if st.button("Cerrar"):
-        st.rerun()
     if st.button("Guardar Aforo"):
         if canvas_result.image_data is not None:
             # Convert the image data to a format suitable for storage (e.g., PNG bytes)
