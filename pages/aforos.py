@@ -39,22 +39,8 @@ def firma_dialog():
         else:
             st.error("Por favor, realiza una firma antes de guardar.")
 
-
-if 'authentication_status' not in ss:
-    st.switch_page('./pages/login_home.py')
-
-if ss["authentication_status"]:
-
-    mc.logout_and_home('./pages/home.py', layout='centered')
-
-    st.subheader("📥 Registro de Aforos")
-
-    # Persist Ciudad and Placa between reruns using session_state
-    if 'aforos_selected_city' not in ss:
-        ss['aforos_selected_city'] = ""
-    if 'aforos_sel_plate' not in ss:
-        ss['aforos_sel_plate'] = ""
-
+@st.dialog("Ruta del Día")
+def todays_route():
     with st.container(border=True):
         cities = mq.list_cities() or []
         city_options = [""] + cities
@@ -69,11 +55,36 @@ if ss["authentication_status"]:
         plate_index = plate_options.index(default_plate) if default_plate in plate_options else 0
         sel_plate = st.selectbox("Placa", options=plate_options, index=plate_index, key='aforos_sel_plate')
         placa_id = vehicle_map.get(sel_plate) if sel_plate else None
+    
+
+        if st.button("Confirmar Ruta"):
+            if selected_city and placa_id:
+                st.toast("✅ Ruta del día confirmada")
+                st.rerun()
+            else:
+                st.error("Por favor, selecciona ciudad y placa.")
+
+if 'authentication_status' not in ss:
+    st.switch_page('./pages/login_home.py')
+
+if ss["authentication_status"]:
+
+    mc.logout_and_home('./pages/home.py', layout='centered')
+
+    if st.button("Ruta del Día", type="primary"):
+        todays_route()
+    st.subheader("📥 Registro de Aforos")
+
+    # Persist Ciudad and Placa between reruns using session_state
+    if 'aforos_selected_city' not in ss:
+        ss['aforos_selected_city'] = ""
+    if 'aforos_sel_plate' not in ss:
+        ss['aforos_sel_plate'] = ""
 
 
+    with st.container(border=True):
 
-    with st.container(border=True, ):
-
+        selected_city = "Calio"
         # Selection flow: Cliente -> Sucursal (depends on selected_city)
         selected_client_id = None
         client_label = "Cliente"
@@ -135,6 +146,7 @@ if ss["authentication_status"]:
                 # with columns[1]:
                 #     peso = st.number_input("Peso (kg)", format="%f")
             if weight_available == 'No':
+            # Allow selecting a container type if weighing isn't available
                 volumen_df = pd.DataFrame(columns=["Item", "Tipo de contenedor", "Cantidad"])
                 displayed_df = st.data_editor(
                     volumen_df,
@@ -154,17 +166,15 @@ if ss["authentication_status"]:
                         ),
                     },
                 )
-                # with columns[0]:
-                #     container_options = ["", "Bolsas", "Contenedores", "Tarros", "Sacos", "Palets"]
-                #     tipo_contenedor = st.selectbox("Tipo de contenedor", options=container_options, index=0)
-                # with columns[1]:
-                #     cantidad = st.number_input("Cantidad", format="%f")
-            # Allow selecting a container type if weighing isn't available
+            columns = st.columns(2)
+            with columns[0]:
+                evidencia_fachada = st.camera_input("Tomar evidencia fotográfica de la fachada")
+            with columns[1]:
+                evidencia_residuos = st.camera_input("Tomar evidencia fotográfica de los residuos")
+            firma = st.button("Firmar Aforo")
 
-        firma = st.button("Firmar Aforo")
-
-        if firma:
-            firma_dialog()
+            if firma:
+                firma_dialog()
 
 else:
     st.switch_page('./pages/login_home.py')
