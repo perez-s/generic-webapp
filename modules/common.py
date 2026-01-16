@@ -70,6 +70,17 @@ def logout_and_home(previous_page: str = None, layout: str = "wide"):
     if 'authapp' not in ss:
         ss.authapp = authenticator
     if layout == 'centered':
+        st.set_page_config(page_title="Weroapp", page_icon="./resources/alpha-w-circle-custom.png", layout=layout)
+        st.markdown("""
+            <style>
+                .block-container {
+                        padding-top: 0rem;
+                        padding-bottom: 0rem;
+                        padding-left: 0rem;
+                        padding-right: 0rem;
+                    }
+            </style>
+            """, unsafe_allow_html=True)
         columns = st.columns([2,1,2])
         with columns[0]:
             st.markdown(f"Sesión iniciada como: **{ss['name']}**")
@@ -77,6 +88,18 @@ def logout_and_home(previous_page: str = None, layout: str = "wide"):
         with columns[2]:
             st.image("./resources/Logo2.png", width="stretch")
     if layout == 'wide':
+        st.set_page_config(page_title="Weroapp", page_icon="./resources/alpha-w-circle-custom.png", layout=layout)
+        st.markdown("""
+            <style>
+                .block-container {
+                        padding-top: 0.2rem;
+                        padding-bottom: 0rem;
+                        padding-left: 5rem;
+                        padding-right: 5rem;
+                    }
+            </style>
+            """, unsafe_allow_html=True)
+        authenticator = stauth.Authenticate('config.yaml')
         columns = st.columns([1,1,2,1,1,1,2])
         with columns[0]:
             if previous_page:

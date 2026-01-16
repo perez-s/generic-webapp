@@ -72,7 +72,7 @@ if ss["authentication_status"]:
 
 
 
-    with st.container(border=True):
+    with st.container(border=True, ):
 
         # Selection flow: Cliente -> Sucursal (depends on selected_city)
         selected_client_id = None
