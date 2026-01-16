@@ -76,8 +76,8 @@ def logout_and_home(previous_page: str = None, layout: str = "wide"):
                 .block-container {
                         padding-top: 0rem;
                         padding-bottom: 0rem;
-                        padding-left: 0rem;
-                        padding-right: 0rem;
+                        padding-left: 1rem;
+                        padding-right: 1rem;
                     }
             </style>
             """, unsafe_allow_html=True)
