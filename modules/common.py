@@ -99,7 +99,6 @@ def logout_and_home(previous_page: str = None, layout: str = "wide"):
                     }
             </style>
             """, unsafe_allow_html=True)
-        authenticator = stauth.Authenticate('config.yaml')
         columns = st.columns([1,1,2,1,1,1,2])
         with columns[0]:
             if previous_page:
