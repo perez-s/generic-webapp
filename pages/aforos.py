@@ -37,6 +37,7 @@ def firma_dialog(
             ev_fachada_b64 = mc.img_to_b64(evidencia_fachada)
             ev_residuos_b64 = mc.img_to_b64(evidencia_residuos)
             firma_b64 = canvas_result.image_data
+            print(firma_b64)
             
             res = mq.create_aforo_record(
                 vehiculo_placa=vehiculo_placa,
