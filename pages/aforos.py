@@ -36,7 +36,7 @@ def firma_dialog(
             # prepare payload fields based on weight vs containers
             ev_fachada_b64 = mc.img_to_b64(evidencia_fachada)
             ev_residuos_b64 = mc.img_to_b64(evidencia_residuos)
-            firma_b64 = mc.img_to_b64(canvas_result.image_data)
+            firma_b64 = canvas_result.image_data
             
             res = mq.create_aforo_record(
                 vehiculo_placa=vehiculo_placa,
