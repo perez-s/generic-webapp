@@ -13,32 +13,71 @@ import pandas as pd
 mc.protected_content()
 
 @st.dialog("Firma Aforo")
-def firma_dialog():
+def firma_dialog(
+    df: pd.DataFrame,
+    vehiculo_placa: str,
+    sucursal_id: int,
+    evidencia_fachada: BytesIO,
+    evidencia_residuos: BytesIO,
+    observaciones: str
+):
+        nombre = st.text_input("Nombre completo")
+        cedula = st.number_input("Cédula", min_value=0, step=1)
 
-    nombre = st.text_input("Nombre completo")
-    cedula = st.number_input("Cédula", min_value=0, step=1)
+        canvas_result = st_canvas(
+            fill_color="rgba(255, 165, 0, 0.3)",  # Fixed fill color with some opacity
+            update_streamlit=True,
+            height=150,
+            key="canvas",
+        )
 
-    canvas_result = st_canvas(
-        fill_color="rgba(255, 165, 0, 0.3)",  # Fixed fill color with some opacity
-        update_streamlit=True,
-        height=150,
-        key="canvas",
-    )
- 
-    if st.button("Guardar Aforo"):
-        if canvas_result.image_data is not None:
-            # Convert the image data to a format suitable for storage (e.g., PNG bytes)
+        if st.button("Confirmar Firma"):
+            operario = ss.get('username')
+            # prepare payload fields based on weight vs containers
+            ev_fachada_b64 = mc.img_to_b64(evidencia_fachada)
+            ev_residuos_b64 = mc.img_to_b64(evidencia_residuos)
+            firma_b64 = mc.img_to_b64(canvas_result.image_data)
+            
+            res = mq.create_aforo_record(
+                vehiculo_placa=vehiculo_placa,
+                operario_name=operario,
+                sucursal_id=sucursal_id,
+                evidencia_fachada=ev_fachada_b64,
+                evidencia_residuos=ev_residuos_b64,
+                nombre_firma=nombre,
+                cedula_firma=cedula,
+                firma=firma_b64,
+                observaciones=observaciones
+            )
 
-            img = Image.fromarray(canvas_result.image_data.astype('uint8'), 'RGBA')
-            buffered = BytesIO()
-            img.save(buffered, format="PNG")
-            img_str = base64.b64encode(buffered.getvalue()).decode()
+            # if res and res.status_code == 201:
+            if True:
+                aforo_id = res.data[0]['id']
+                # aforo_id = 1
+                # Now insert residues if any
+                df['aforo_id'] = aforo_id
 
-            # Here you would save img_str to your database or wherever needed
-            st.toast("✅ Aforo guardado exitosamente")
-            st.rerun()
-        else:
-            st.error("Por favor, realiza una firma antes de guardar.")
+                df.rename(columns={
+                    "Item": "residuo",
+                }, inplace=True)
+
+                if "Peso (kg)" in df.columns:
+                    df.rename(columns={
+                        "Peso (kg)": "weight"
+                    }, inplace=True)
+                else:
+                    df.rename(columns={
+                        "Tipo de contenedor": "contenedor",
+                        "Cantidad": "cantidad_contenedor"
+                    }, inplace=True)
+
+                residuo_record = df.to_dict(orient='records')
+                
+                print(residuo_record)
+                mq.create_aforo_residuo_record(residuo_record)
+
+                st.toast("✅ Aforo registrado exitosamente")
+                st.rerun()
 
 @st.dialog("Ruta del Día")
 def todays_route():
@@ -49,17 +88,15 @@ def todays_route():
         city_index = city_options.index(default_city) if default_city in city_options else 0
         selected_city = st.selectbox("Ciudad", options=city_options, index=city_index, key='aforos_selected_city')
 
-        vehicles = mq.list_vehicles() or []
-        vehicle_map = {v['plate']: v['id'] for v in (vehicles or [])}
-        plate_options = [""] + list(vehicle_map.keys())
-        default_plate = ss.get('aforos_sel_plate', "")
-        plate_index = plate_options.index(default_plate) if default_plate in plate_options else 0
-        sel_plate = st.selectbox("Placa", options=plate_options, index=plate_index, key='aforos_sel_plate')
-        placa_id = vehicle_map.get(sel_plate) if sel_plate else None
-    
+        selected_plate = st.text_input("Placa del vehículo", key='aforos_selected_plate')
 
         if st.button("Confirmar Ruta"):
-            if selected_city and placa_id:
+            if selected_city and selected_plate:
+                mq.create_todays_route(
+                    username=ss.get('username'),
+                    ciudad_today=selected_city,
+                    vehicle_plate=selected_plate
+                )
                 st.toast("✅ Ruta del día confirmada")
                 st.rerun()
             else:
@@ -72,20 +109,26 @@ if ss["authentication_status"]:
 
     mc.logout_and_home('./pages/home.py', layout='centered')
 
+    if st.button("Volver al Inicio", type="primary"):
+        st.switch_page('./pages/entry_forms.py')
+
     if st.button("Ruta del Día", type="primary"):
         todays_route()
     st.subheader("📥 Registro de Aforos")
 
-    # Persist Ciudad and Placa between reruns using session_state
-    if 'aforos_selected_city' not in ss:
-        ss['aforos_selected_city'] = ""
-    if 'aforos_sel_plate' not in ss:
-        ss['aforos_sel_plate'] = ""
-
-
     with st.container(border=True):
 
-        selected_city = "Calio"
+        # Attempt to prefill city and plate from today's route for current user
+        selected_city = ""
+        selected_plate = ""
+        if ss.get("username"):
+            latest_route = mq.get_latest_todays_route(ss.get("username"))
+            if latest_route:
+                # set session keys so the top selectors reflect this choice
+                selected_city = latest_route.get('ciudad_today') or ""
+                selected_plate = latest_route.get('vehicle_plate') or ""
+        else:
+            selected_city = ""
         # Selection flow: Cliente -> Sucursal (depends on selected_city)
         selected_client_id = None
         client_label = "Cliente"
@@ -114,9 +157,6 @@ if ss["authentication_status"]:
 
         # Other inputs
         # Use current date and current time automatically (no user inputs)
-        fecha_date = datetime.now().date()
-        fecha_time = datetime.now().time()
-        observaciones = st.text_area("Observaciones")
         is_there_residues = st.radio("¿Hay residuos?", options=['Si', 'No'], index=1, horizontal=True)
         if is_there_residues == 'No':
             st.info("No hay residuos para registrar en este aforo.")
@@ -172,10 +212,24 @@ if ss["authentication_status"]:
                 evidencia_fachada = st.camera_input("Tomar evidencia fotográfica de la fachada")
             with columns[1]:
                 evidencia_residuos = st.camera_input("Tomar evidencia fotográfica de los residuos")
+            observaciones = st.text_area("Observaciones")
+            # derive placa_id from session selected plate
+
             firma = st.button("Firmar Aforo")
 
             if firma:
-                firma_dialog()
+                if not sucursal_id:
+                    st.error("Selecciona primero la sucursal (Ciudad → Cliente → Sucursal)")
+                else:
+                    firma_dialog(
+                        df=displayed_df,
+                        vehiculo_placa=selected_plate,
+                        sucursal_id=sucursal_id,
+                        evidencia_fachada=evidencia_fachada,
+                        evidencia_residuos=evidencia_residuos,
+                        observaciones=observaciones
+                    )
+                    st.rerun()
 
 else:
     st.switch_page('./pages/login_home.py')

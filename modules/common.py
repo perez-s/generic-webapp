@@ -24,6 +24,15 @@ email_password = os.getenv('EMAIL_PASSWORD')
 #         encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
 #     return encoded_string
 
+def img_to_b64(img):
+    try:
+        if img is None:
+            return None
+        b = img.getvalue()
+        return base64.b64encode(b).decode()
+    except Exception:
+        return None
+
 def utc_to_america_bogota(utc_dt: datetime) -> datetime:
     """Convert UTC datetime to America/Bogota timezone."""
     bogota_tz = timezone(timedelta(hours=-5))

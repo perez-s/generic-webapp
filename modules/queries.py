@@ -2,6 +2,7 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 import os
 from datetime import datetime, timezone, timedelta
+import streamlit as st
 
 load_dotenv()
 supabase_url = os.getenv("SUPABASE_URL")
@@ -126,34 +127,70 @@ def get_sucursales_for_client(client_id: int, city: str = None):
         return []
 
 
-def list_vehicles():
-    try:
-        res = supabase.table("vehicles").select("id,plate").order("plate", desc=False).execute()
-        return res.data or []
-    except Exception as e:
-        print(f"Error listing vehicles: {e}")
-        return []
-
-
-def create_aforo(sucursal_id: int, fecha_iso: str, firma: str, observaciones: str, placa_id: int, cantidad: float, item: str, tipo_observacion: str):
-    now = datetime.now(timezone(timedelta(hours=-5))).isoformat()
+def create_todays_route(username: str, ciudad_today: str, vehicle_plate: str):
+    """Insert a todays_route entry for the given username."""
     try:
         payload = {
+            "username": username,
+            "ciudad_today": ciudad_today,
+            "vehicle_plate": vehicle_plate
+        }
+        res = supabase.table("todays_route").insert(payload).execute()
+        return res
+    except Exception as e:
+        st.toast(f"Error creating todays_route: {e}")
+        return None
+
+
+def get_latest_todays_route(username: str):
+    """Return the latest todays_route row for a username, or None."""
+    try:
+        res = supabase.table("todays_route").select("*").eq("username", username).order("created_at", desc=True).limit(1).execute()
+        return res.data[0] if res.data else None
+    except Exception as e:
+        print(f"Error fetching latest todays_route: {e}")
+        return None
+
+
+def create_aforo_record(
+        vehiculo_placa: str,
+        operario_name: str,
+        sucursal_id: int,
+        evidencia_fachada: str = None,
+        evidencia_residuos: str = None,
+        nombre_firma: str = None,
+        cedula_firma: str = None,
+        firma: str = None,
+        observaciones: str = None
+):
+    """Insert a record into `aforos` using provided fields. Only non-None values are included."""
+    try:
+        payload = {
+            "vehiculo_placa": vehiculo_placa,
+            "operario_name": operario_name,
             "sucursal_id": sucursal_id,
-            "fecha": fecha_iso,
+            "evidencia_fachada": evidencia_fachada,
+            "evidencia_residuos": evidencia_residuos,
+            "nombre_firma": nombre_firma,
+            "cedula_firma": cedula_firma,
             "firma": firma,
             "observaciones": observaciones,
-            "placa_id": placa_id,
-            "cantidad": cantidad,
-            "item": item,
-            "tipo_observacion": tipo_observacion,
-            "created_at": now,
-            "updated_at": now,
         }
+        # Remove keys with None values
+        payload = {k: v for k, v in payload.items() if v is not None}
         res = supabase.table("aforos").insert(payload).execute()
         return res
     except Exception as e:
-        print(f"Error creating aforo: {e}")
+        st.toast(f"Error creating aforo record: {e}")
+        return None
+
+def create_aforo_residuo_record(residuo_df: dict):
+    """Insert a record into `aforos_residues` using provided fields. Only non-None values are included."""
+    try:
+        res = supabase.table("aforos_residues").insert(residuo_df).execute()
+        return res
+    except Exception as e:
+        print(f"Error creating aforo residuo record: {e}")
         return None
 
 def get_client_options():
