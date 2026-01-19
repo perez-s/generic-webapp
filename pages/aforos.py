@@ -116,13 +116,6 @@ if ss["authentication_status"]:
         todays_route()
     st.subheader("📥 Registro de Aforos")
 
-    canvas_result = st_canvas(
-        fill_color="rgba(255, 165, 0, 0.3)",  # Fixed fill color with some opacity
-        update_streamlit=True,
-        height=150,
-        key="canvas",
-    )
-
     with st.container(border=True):
 
         # Attempt to prefill city and plate from today's route for current user
