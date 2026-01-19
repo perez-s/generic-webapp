@@ -229,7 +229,6 @@ if ss["authentication_status"]:
                         evidencia_residuos=evidencia_residuos,
                         observaciones=observaciones
                     )
-                    st.rerun()
 
 else:
     st.switch_page('./pages/login_home.py')
