@@ -1,0 +1,148 @@
+<!doctype html>
+<html>
+  <head>
+      <meta charset="utf-8" />
+      <style>
+    </style>
+  </head>
+  <body>
+      <header id="header">
+        <table class="tg"><thead>
+        <tr>
+            <td class="tg-nrix">Código: FOR-OP-IA</td>
+            <td class="tg-nrix" rowspan="2">Formato Operaciones</td>
+            <td class="tg-nrix" rowspan="3">{{ logo|safe }}</td>
+        </tr>
+        <tr>
+            <td class="tg-nrix">Versión: 04</td>
+        </tr>
+        <tr>
+            <td class="tg-nrix">Fecha formato: 20/10/2025<br></td>
+            <td class="tg-nrix">Informe de actividades</td>
+        </tr></thead>
+        </table>
+        </header>
+        {% if not aforos %}
+        <p>No hay registros de aforos.</p>
+        {% else %}
+        {% for a in aforos %}
+        <table id="general-info">
+            <tr>
+                <th colspan="4" class="gi-title">Información general</th>
+            </tr>
+            <tr>
+                <th>Ciudad</th><td>Cali</td>
+                <th>Cliente</th><td>Qbano</td>
+            </tr>
+                <th>Sucursal</th><td>Cañaveralejo</td>
+                <th>Dirección</th><td>Cl 1a 62a 130</td>
+            <tr>
+                <th>Barrio</th><td>La Cascada</td>
+                <th>Correo</th><td>qbano@gmail.com</td>
+            </tr>
+            <tr>
+                <th>NIT Cliente</th><td>987654321-0</td>
+                <th>NIT Sucursal</th><td>987654321-0</td>
+            </tr>
+        </table>
+
+        <table id="gestor-info">
+            <tr>
+                <th colspan="4" class="gi-title">Información del servicio</th>
+            </tr>
+            <tr>
+                <th>Placa</th><td>MHP929</td>
+            </tr>
+            <tr>
+                <th>Consecutivo</th><td>WERO-{{ a.id }}</td>
+                <th>Operario</th><td>{{ a.operario_name }}</td>
+            </tr>
+            <tr>
+                <th>Fecha de recolección</th><td>{{ a.created_at }}</td>
+                <th>Hora de recolección</th><td>{{ a.created_at }}</td>
+            </tr>
+        </table>
+        {% if a.residues %}
+        <table id="residuos">
+            <tr>
+                <th colspan="4" class="gi-title">Residuos recolectados</th>
+            </tr>
+            <tr>
+                <th>Categoría</th><th>Contenedor</th><th>Cantidad</th><th>Peso (kg)</th>
+            </tr>
+            {% for r in a.residues %}
+            <tr>
+                <td>{{ r.residuo or r.residuo_name }}</td>
+                <td>{{ r.contenedor or '' }}</td>
+                <td>{{ r.cantidad_contenedores or r.cantidad or '' }}</td>
+                <td>{{ r.weight or '' }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% endif %}
+        <table id="observaciones">
+            <tr>
+                <th class="gi-title">Observaciones</th>
+            </tr>
+            <tr>
+                <td>{{ a.observaciones or '' }}</td>
+            </tr>
+        </table>
+        <table id="firmas">
+            <tr>
+                <th colspan="2" class="gi-title">Firmas</th>
+            </tr>
+            <tr>
+                <td>
+                    <p>Firma operario:</p>
+                    <p>Sebastián Pérez Cuadros</p>
+                    <p>CC 1193414920</p>
+                </td>
+                <td>
+                    <p>Firma cliente:</p>
+                    {% if a.firma %}
+                    <div class="ev">
+                        {{ a.firma|safe }}
+                    </div>
+                    {% else %} 
+                    <p>__________________________</p>
+                    {% endif %}
+                </td>
+            </table>
+            <table id="evidencias">
+                <tr>
+                    <th colspan="2" class="gi-title">Evidencias fotográficas</th>
+                </tr>
+                <tr>
+                    <td>
+                        <p>Foto fachada:</p>
+                        {% if a.evidencia_fachada %}
+                        <div class="ev">
+                            {{ a.evidencia_fachada|safe }}
+                        </div>
+                        {% else %}
+                        <p>No hay evidencia fotográfica de la fachada.</p>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <p>Foto residuos:</p>
+                        {% if a.evidencia_residuos %}
+                        <div class="ev">
+                            {{ a.evidencia_residuos|safe }}
+                        </div>     
+                        {% else %}
+                        <p>No hay evidencia fotográfica de los residuos.</p>
+                        {% endif %}
+                    </td>
+                </table>
+                <div id="footer-info">
+                    <p>Gestor SAS</p>
+                    <p>NIT 123456789-0</p>
+                    <p>Calle 100 # 50-50, Cali</p>
+                    <p>gestor@gmail.com - Tel: 555-1234</p>
+                </div>
+                {% endfor %}
+                {% endif %}
+            </body>
+            </html>
+            

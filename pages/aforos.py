@@ -21,64 +21,62 @@ def firma_dialog(
     evidencia_residuos: BytesIO,
     observaciones: str
 ):
-        nombre = st.text_input("Nombre completo")
-        cedula = st.number_input("Cédula", min_value=0, step=1)
+    nombre = st.text_input("Nombre completo")
+    cedula = st.number_input("Cédula", min_value=0, step=1)
 
-        canvas_result = st_canvas(
-            fill_color="rgba(255, 165, 0, 0.3)",  # Fixed fill color with some opacity
-            update_streamlit=True,
-            height=150,
-            key="canvas",
-        )
+    canvas_result = st_canvas(
+        fill_color="rgba(255, 165, 0, 0.3)",  # Fixed fill color with some opacity
+        update_streamlit=True,
+        height=150,
+        key="canvas",
+        stroke_width=2
+    )
 
-        if st.button("Confirmar Firma"):
-            operario = ss.get('username')
-            # prepare payload fields based on weight vs containers
-            ev_fachada_b64 = mc.img_to_b64(evidencia_fachada)
-            ev_residuos_b64 = mc.img_to_b64(evidencia_residuos)
-            firma_b64 = canvas_result.image_data
-            print(firma_b64)
+    if st.button("Confirmar Firma"):
+        if canvas_result.image_data is not None:
+            # Convert the image data to a PIL Image
+            firma = Image.fromarray(canvas_result.image_data.astype('uint8'), 'RGBA')
+            buffered = BytesIO()
+            firma.save(buffered, format="PNG")
+            firma_str = base64.b64encode(buffered.getvalue()).decode()
             
+            evidencia_fachada_str = mc.img_to_b64(evidencia_fachada)
+            evidencia_residuos_str = mc.img_to_b64(evidencia_residuos)
+
+            print(firma_str)
+            # Create aforo record
             res = mq.create_aforo_record(
                 vehiculo_placa=vehiculo_placa,
-                operario_name=operario,
+                operario_name=ss.get('username'),
                 sucursal_id=sucursal_id,
-                evidencia_fachada=ev_fachada_b64,
-                evidencia_residuos=ev_residuos_b64,
+                evidencia_fachada=evidencia_fachada_str,
+                evidencia_residuos=evidencia_residuos_str,
                 nombre_firma=nombre,
                 cedula_firma=cedula,
-                firma=firma_b64,
+                firma=firma_str,
                 observaciones=observaciones
             )
 
-            # if res and res.status_code == 201:
-            if True:
-                aforo_id = res.data[0]['id']
-                # aforo_id = 1
-                # Now insert residues if any
-                df['aforo_id'] = aforo_id
+            aforo_id = res.data[0]['id']
 
+            df['aforo_id'] = aforo_id
+            
+            df.rename(columns={"Item": "residuo"}, inplace=True)
+            if 'Peso (kg)' in df.columns:
+                df.rename(columns={"Peso (kg)": "weight"}, inplace=True)
+            if 'Tipo de contenedor' in df.columns:
                 df.rename(columns={
-                    "Item": "residuo",
-                }, inplace=True)
-
-                if "Peso (kg)" in df.columns:
-                    df.rename(columns={
-                        "Peso (kg)": "weight"
+                    "Tipo de contenedor": "contenedor",
+                    "Cantidad": "cantidad_contenedores"
                     }, inplace=True)
-                else:
-                    df.rename(columns={
-                        "Tipo de contenedor": "contenedor",
-                        "Cantidad": "cantidad_contenedor"
-                    }, inplace=True)
+            df = df.to_dict(orient='records')
+            mq.create_aforo_residuo_record(df)
+                           
+            st.toast("✅ Aforo registrado con éxito")
+            st.rerun()
+        else:
+            st.error("Por favor, proporciona una firma antes de confirmar.")
 
-                residuo_record = df.to_dict(orient='records')
-                
-                print(residuo_record)
-                mq.create_aforo_residuo_record(residuo_record)
-
-                st.toast("✅ Aforo registrado exitosamente")
-                st.rerun()
 
 @st.dialog("Ruta del Día")
 def todays_route():

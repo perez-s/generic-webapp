@@ -263,6 +263,20 @@ def entry_forms_tile():
     if entry_forms:
         st.switch_page("./pages/entry_forms.py")
 
+def reports_tile():
+    reports = streamlit_tile(
+        label="Reportes",
+        title="Reportes",
+        description="Genera y descarga reportes en PDF",
+        icon="📄",
+        color_theme="blue",
+        height=hpixels,
+        width=wpixels,
+        key="reports_tile"
+    )
+    if reports:
+        st.switch_page("./pages/reports.py")
+
 def MenuButtons(location: Literal['residuos_peligrosos', 'home', 'residuos_solidos'], user_roles=None):
 
     if user_roles is None:
@@ -301,7 +315,8 @@ def MenuButtons(location: Literal['residuos_peligrosos', 'home', 'residuos_solid
                 render_tiles(wero_tiles)
 
             if ss.username in testing:
-                st.switch_page("./pages/aforos.py")
+                testing_tiles = [aforos_tile, entry_forms_tile, reports_tile]
+                render_tiles(testing_tiles)
         
         elif location == 'residuos_peligrosos':
             if ss.username in caracol:

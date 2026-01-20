@@ -160,7 +160,7 @@ def create_aforo_record(
         evidencia_residuos: str = None,
         nombre_firma: str = None,
         cedula_firma: str = None,
-        firma: str = None,
+        firma: dict = None,
         observaciones: str = None
 ):
     """Insert a record into `aforos` using provided fields. Only non-None values are included."""
@@ -203,3 +203,31 @@ def get_client_options():
 
 if __name__ == "__main__":
     print(get_client_options())
+
+
+def get_recent_aforos(limit: int = 100):
+    """Return recent aforos rows (most recent first)."""
+    try:
+        res = supabase.table("aforos").select("*").order("created_at", desc=True).limit(limit).execute()
+        return res.data or []
+    except Exception as e:
+        print(f"Error fetching recent aforos: {e}")
+        return []
+
+
+def get_residues_for_aforos(aforo_ids: list):
+    """Return aforos_residues rows for given aforo ids as a dict keyed by aforo_id."""
+    try:
+        if not aforo_ids:
+            return {}
+        # use .in_ to fetch matching aforo_id rows
+        res = supabase.table("aforos_residues").select("*").in_("aforo_id", aforo_ids).execute()
+        rows = res.data or []
+        grouped = {}
+        for r in rows:
+            key = r.get('aforo_id')
+            grouped.setdefault(key, []).append(r)
+        return grouped
+    except Exception as e:
+        print(f"Error fetching residues for aforos: {e}")
+        return {}
