@@ -6,26 +6,11 @@ import base64
 import os
 import jinja2
 import modules.common as mc
+import streamlit as st
 
 
 
-def _img_tag_from_b64(b64_str, alt="image", max_width_px=400):
-    if not b64_str:
-        return ""
-    # Ensure we have only the raw base64 body (strip data: prefix if present)
-    if b64_str.startswith("data:"):
-        # find comma
-        idx = b64_str.find(",")
-        if idx != -1:
-            b64_body = b64_str[idx+1:]
-        else:
-            b64_body = b64_str
-    else:
-        b64_body = b64_str
-    return f"<img src=\"data:image/png;base64,{b64_body}\" alt=\"{alt}\" style=\"max-width:{max_width_px}px;\" />"
-
-
-def build_aforos_html(aforos, residues_map=None, title="Reporte de Aforos"):
+def build_aforos_html(aforos, residues_map=None, title="Reporte de Aforos", fig_b64=None):
     """Render the aforos HTML using a Jinja2 template located in resources/templates/aforos.html."""
     residues_map = residues_map or {}
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -34,16 +19,18 @@ def build_aforos_html(aforos, residues_map=None, title="Reporte de Aforos"):
     prepared = []
     for a in (aforos or []):
         aforo_id = a.get('id')
+        if aforo_id < 10:
+            aforo_id_str = f"00{aforo_id}"
+        elif aforo_id < 100:
+            aforo_id_str = f"0{aforo_id}"
+        else:
+            aforo_id_str = str(aforo_id)
         evidencia_fachada = a.get('evidencia_fachada')
         evidencia_residuos = a.get('evidencia_residuos')
         firma = a.get('firma')
-
-        evidencia_fachada = _img_tag_from_b64(evidencia_fachada, alt='fachada') if evidencia_fachada else ''
-        evidencia_residuos = _img_tag_from_b64(evidencia_residuos, alt='residuos') if evidencia_residuos else ''
-        firma = _img_tag_from_b64(firma, alt='firma') if firma else ''
-
+        print(aforo_id)
         prepared.append({
-            'id': aforo_id,
+            'id': aforo_id_str,
             'created_at': a.get('created_at'),
             'sucursal_id': a.get('sucursal_id'),
             'vehiculo_placa': a.get('vehiculo_placa'),
@@ -55,6 +42,7 @@ def build_aforos_html(aforos, residues_map=None, title="Reporte de Aforos"):
             'evidencia_residuos': evidencia_residuos,
             'firma': firma,
             'residues': residues_map.get(aforo_id) or [],
+            'map_figure': fig_b64
         })
 
     # Locate templates directory
@@ -74,9 +62,6 @@ def build_aforos_html(aforos, residues_map=None, title="Reporte de Aforos"):
                 logo_b64 = base64.b64encode(f.read()).decode()
         except Exception:
             logo_b64 = None
-
-    logo = _img_tag_from_b64(logo_b64, alt="Logo", max_width_px=100)
-
     try:
         template = env.get_template('aforos.html')
     except jinja2.exceptions.TemplateNotFound:
@@ -84,14 +69,14 @@ def build_aforos_html(aforos, residues_map=None, title="Reporte de Aforos"):
         return "<html><body><p>Template not found: resources/templates/aforos.html</p></body></html>"
     
 
-    rendered = template.render(aforos=prepared, title=title, generated_at=now, logo=logo)
+    rendered = template.render(aforos=prepared, title=title, generated_at=now, logo=logo_b64)
     return rendered
 
 
-def generate_aforos_pdf(aforos, residues_map=None, title="Reporte de Aforos") -> bytes:
+def generate_aforos_pdf(aforos, residues_map=None, title="Reporte de Aforos", fig_b64=None) -> bytes:
     """Generate PDF bytes from aforos list using WeasyPrint."""
     font_config = FontConfiguration()
-    html_str = build_aforos_html(aforos, residues_map=residues_map, title=title)
+    html_str = build_aforos_html(aforos, residues_map=residues_map, title=title, fig_b64=fig_b64)
     css_path = os.path.join(os.path.dirname(__file__), "..", "resources", "aforo.css")
     css_path = os.path.normpath(css_path)
     pdf_bytes = HTML(string=html_str).write_pdf(stylesheets=[CSS(filename=css_path, font_config=font_config)], font_config=font_config)

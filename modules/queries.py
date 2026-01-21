@@ -145,7 +145,11 @@ def create_todays_route(username: str, ciudad_today: str, vehicle_plate: str):
 def get_latest_todays_route(username: str):
     """Return the latest todays_route row for a username, or None."""
     try:
-        res = supabase.table("todays_route").select("*").eq("username", username).order("created_at", desc=True).limit(1).execute()
+        tz = timezone(timedelta(hours=-5))
+        now = datetime.now(tz)
+        start = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+        end = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+        res = supabase.table("todays_route").select("*").eq("username", username).gte("created_at", start).lt("created_at", end).order("created_at", desc=True).limit(1).execute()
         return res.data[0] if res.data else None
     except Exception as e:
         print(f"Error fetching latest todays_route: {e}")

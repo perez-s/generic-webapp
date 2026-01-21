@@ -9,11 +9,13 @@ from io import BytesIO
 from PIL import Image
 import base64
 import pandas as pd
+from streamlit_js_eval import get_geolocation
 
 mc.protected_content()
 
 @st.dialog("Firma Aforo")
 def firma_dialog(
+
     df: pd.DataFrame,
     vehiculo_placa: str,
     sucursal_id: int,
@@ -28,6 +30,7 @@ def firma_dialog(
         fill_color="rgba(255, 165, 0, 0.3)",  # Fixed fill color with some opacity
         update_streamlit=True,
         height=150,
+        width=450,
         key="canvas",
         stroke_width=2
     )
@@ -38,10 +41,21 @@ def firma_dialog(
             firma = Image.fromarray(canvas_result.image_data.astype('uint8'), 'RGBA')
             buffered = BytesIO()
             firma.save(buffered, format="PNG")
+
             firma_str = base64.b64encode(buffered.getvalue()).decode()
-            
             evidencia_fachada_str = mc.img_to_b64(evidencia_fachada)
             evidencia_residuos_str = mc.img_to_b64(evidencia_residuos)
+
+            location = get_geolocation()
+
+            if location and 'error' in location:
+                if location['error']['code'] == 1:
+                    st.error("Location permission denied")
+                else:
+                    st.warning(f"Geolocation error: {location['error']['message']}")
+            elif location:
+                lat = location['coords']['latitude']
+                lon = location['coords']['longitude']
 
             print(firma_str)
             # Create aforo record
@@ -115,6 +129,17 @@ if ss["authentication_status"]:
         todays_route()
     st.subheader("📥 Registro de Aforos")
 
+    location = get_geolocation()
+
+    if location and 'error' in location:
+        if location['error']['code'] == 1:
+            st.error("Location permission denied")
+        else:
+            st.warning(f"Geolocation error: {location['error']['message']}")
+    elif location:
+        lat = location['coords']['latitude']
+        lon = location['coords']['longitude']
+
     with st.container(border=True):
 
         # Attempt to prefill city and plate from today's route for current user
@@ -164,10 +189,12 @@ if ss["authentication_status"]:
         if is_there_residues == 'Si':
             weight_available = st.radio("¿Hay pesaje disponible?", options=['Si', 'No'], index=0, horizontal=True)
             if weight_available == 'Si':
-                peso_df = pd.DataFrame(columns=["Item", "Peso (kg)"])
+                peso_df = pd.DataFrame({'Item': ["","","", ""],
+                                        'Peso (kg)': [0,0,0,0]})
                 displayed_df = st.data_editor(
                     peso_df,
-                    num_rows="dynamic",
+                    num_rows="fixed",
+                    hide_index=True,
                     column_config={
                         "Item": st.column_config.SelectboxColumn(
                             "Item",
@@ -180,17 +207,15 @@ if ss["authentication_status"]:
                     },
                 )
                 total_weight = displayed_df["Peso (kg)"].sum()
-                st.markdown(f"**Peso Total:** {total_weight:.2f} kg")
-                # with columns[0]:
-                #     item = st.selectbox("Item", options=[""] + ["cartón", "plástico", "vidrio", "metal", "madera", "electrónicos", "otros"], index=0)
-                # with columns[1]:
-                #     peso = st.number_input("Peso (kg)", format="%f")
             if weight_available == 'No':
             # Allow selecting a container type if weighing isn't available
-                volumen_df = pd.DataFrame(columns=["Item", "Tipo de contenedor", "Cantidad"])
+                volumen_df = pd.DataFrame({'Item': ["","","", ""],
+                                        'Tipo de contenedor': ["","","",""],
+                                        'Cantidad': [0,0,0,0]})
                 displayed_df = st.data_editor(
                     volumen_df,
-                    num_rows="dynamic",
+                    num_rows="fixed",
+                    hide_index=True,
                     column_config={
                         "Item": st.column_config.SelectboxColumn(
                             "Item",

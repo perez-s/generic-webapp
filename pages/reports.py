@@ -4,6 +4,11 @@ import modules.common as mc
 import modules.queries as mq
 import modules.reports as mr
 from io import BytesIO
+from streamlit_js_eval import get_geolocation
+import base64
+import plotly.graph_objects as go
+import plotly.express as px
+import plotly.io as py
 
 mc.protected_content()
 
@@ -18,14 +23,44 @@ mc.logout_and_home('./pages/home.py', layout='centered')
 st.title("Reportes — Aforos")
 st.write("Genera un PDF con los registros de aforos más recientes.")
 
+location = get_geolocation()
+
+# Check if location permission was denied
+if location and 'error' in location:
+    if location['error']['code'] == 1:
+        st.error("Location permission denied")
+    else:
+        st.warning(f"Geolocation error: {location['error']['message']}")
+elif location:
+    lat = location['coords']['latitude']
+    lon = location['coords']['longitude']
+    st.write(f"Latitude: {lat}")
+    st.write(f"Longitude: {lon}")
+
 limit = st.number_input("Cantidad de registros", min_value=1, max_value=1000, value=50, step=1)
 
 if st.button("Generar PDF"):
     with st.spinner("Generando PDF..."):
+        fig = px.scatter_map(lat=[lat] if location and 'coords' in location else [],
+                            lon=[lon] if location and 'coords' in location else [],
+                            zoom=18, #wont work with values over 18
+                            color_discrete_sequence=["red"],
+                            map_style="open-street-map",
+                            size=[18],
+                            labels="Ubicación del operario",
+                            height=800,
+                            width=600)
+        fig.update_layout(
+            margin={'t':0,'l':0,'b':0,'r':0}
+        )
+
+        fig_b64 = fig.to_image(format="png")
+        fig_b64 = base64.b64encode(fig_b64).decode('utf-8')
+
         aforos = mq.get_recent_aforos(limit=int(limit))
         aforo_ids = [a.get('id') for a in aforos if a.get('id')]
         residues_map = mq.get_residues_for_aforos(aforo_ids)
-        pdf_bytes = mr.generate_aforos_pdf(aforos, residues_map=residues_map)
+        pdf_bytes = mr.generate_aforos_pdf(aforos, residues_map=residues_map, fig_b64=fig_b64)
         if pdf_bytes:
             buf = BytesIO(pdf_bytes)
             filename = f"reporte_aforos_{len(aforos)}.pdf"
