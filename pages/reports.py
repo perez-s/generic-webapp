@@ -6,9 +6,7 @@ import modules.reports as mr
 from io import BytesIO
 from streamlit_js_eval import get_geolocation
 import base64
-import plotly.graph_objects as go
 import plotly.express as px
-import plotly.io as py
 
 mc.protected_content()
 
