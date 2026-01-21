@@ -70,6 +70,8 @@ CREATE TABLE IF NOT EXISTS public.aforos (
   cedula_firma integer,
   firma text,
   observaciones text,
+  latitude double precision,
+  longitude double precision,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT aforos_pkey PRIMARY KEY (id),

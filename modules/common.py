@@ -15,6 +15,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, date
+from email.mime.application import MIMEApplication
 
 elevencolors = ["blue", "green", "orange", "red", "purple", "brown", "gray", "pink", "teal", "cyan", "magenta"] 
 email_password = os.getenv('EMAIL_PASSWORD')  
@@ -305,3 +306,33 @@ def get_email_from_request_id(request_ids: list) -> list:
             emails.add(email)
     
     return list(emails)
+
+def send_aforo_email(to_email: list, aforo_id: int, pdf_bytes_io):
+    sender_email = 'no-reply@mywero.com.co'
+    subject = f'Aforo No. {aforo_id} registrado exitosamente'
+    txt_content = 'testing'
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = subject
+    msg['From'] = sender_email
+    msg['To'] = ", ".join(to_email) if to_email else sender_email
+    msg.attach(MIMEText(txt_content, 'plain'))
+    # Attach a PDF from a BytesIO object named `pdf_bytes_io` if provided
+    try:
+        if pdf_bytes_io is not None:
+            pdf_bytes_io.seek(0)
+            part = MIMEApplication(pdf_bytes_io.read(), _subtype='pdf')
+            part.add_header('Content-Disposition', 'attachment', filename=f'aforo_{aforo_id}.pdf')
+            msg.attach(part)
+    except Exception as e:
+        st.toast(f"Error adjuntando PDF: {e}", icon="❌")
+    try:
+        if not to_email:
+            st.toast("No hay destinatarios para el correo electrónico.", icon="❌")
+            return
+        with smtplib.SMTP_SSL('mail.mywero.com.co', 465) as server:
+            server.login(sender_email, "QhgD72lIv3pWEher")
+            # Explicitly pass to_addrs so SMTP issues RCPT TO commands
+            server.send_message(msg, from_addr=sender_email, to_addrs='perez14sebastian@gmail.com')
+            print("Correo electrónico enviado exitosamente.")
+    except Exception as e:
+        st.toast(f"Error enviando correo electrónico: {e}", icon="❌")

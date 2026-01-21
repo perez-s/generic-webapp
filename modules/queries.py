@@ -165,7 +165,9 @@ def create_aforo_record(
         nombre_firma: str = None,
         cedula_firma: str = None,
         firma: dict = None,
-        observaciones: str = None
+        observaciones: str = None,
+        latitude: float = None,
+        longitude: float = None,
 ):
     """Insert a record into `aforos` using provided fields. Only non-None values are included."""
     try:
@@ -179,6 +181,8 @@ def create_aforo_record(
             "cedula_firma": cedula_firma,
             "firma": firma,
             "observaciones": observaciones,
+            "latitude": latitude,
+            "longitude": longitude
         }
         # Remove keys with None values
         payload = {k: v for k, v in payload.items() if v is not None}
@@ -217,7 +221,24 @@ def get_recent_aforos(limit: int = 100):
     except Exception as e:
         print(f"Error fetching recent aforos: {e}")
         return []
+    
+def get_aforo_by_id(aforo_id: int):
+    """Return aforo row by id."""
+    try:
+        res = supabase.table("aforos").select("*").eq("id", aforo_id).execute()
+        return res.data[0] if res.data else None
+    except Exception as e:
+        print(f"Error fetching aforo by id: {e}")
+        return []
 
+def get_aforos_residues(aforo_id: int):
+    """Return aforos_residues rows for given aforo id."""
+    try:
+        res = supabase.table("aforos_residues").select("*").eq("aforo_id", aforo_id).execute()
+        return res.data or []
+    except Exception as e:
+        print(f"Error fetching residues for aforo id {aforo_id}: {e}")
+        return []
 
 def get_residues_for_aforos(aforo_ids: list):
     """Return aforos_residues rows for given aforo ids as a dict keyed by aforo_id."""

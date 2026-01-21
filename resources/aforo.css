@@ -185,6 +185,11 @@ th{background:#009999; text-align:center; color: #ffffff; font-family: 'Variable
   text-align: left;
 }
 
+.bottomleft p {
+  margin: 0;
+  padding: 0;
+}
+
 .container {
   position: relative;
   max-height: 100%;

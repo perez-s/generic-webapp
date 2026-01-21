@@ -10,6 +10,7 @@ from PIL import Image
 import base64
 import pandas as pd
 from streamlit_js_eval import get_geolocation
+import modules.reports as mr
 
 mc.protected_content()
 
@@ -68,8 +69,28 @@ def firma_dialog(
                 nombre_firma=nombre,
                 cedula_firma=cedula,
                 firma=firma_str,
-                observaciones=observaciones
+                observaciones=observaciones,
+                latitude=lat,
+                longitude=lon
             )
+
+            aforo_id = mq.get_aforo_by_id(res.data[0]['id'])
+            residues_map = mq.get_aforos_residues(aforo_id.get('id'))
+            pdf_bytes = mr.generate_aforos_pdf(
+                [aforo_id],
+                residues_map=residues_map,
+                fig_b64=None
+            )
+            
+            mc.send_aforo_email(
+                to_email=['perez14sebastian@gmail.com'],
+                aforo_id=aforo_id.get('id'),
+                pdf_bytes_io=BytesIO(pdf_bytes)
+            )
+
+            st.write(BytesIO(pdf_bytes))
+
+            # Send confirmation email with PDF attached
 
             aforo_id = res.data[0]['id']
 
