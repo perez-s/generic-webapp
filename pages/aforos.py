@@ -238,7 +238,7 @@ if ss["authentication_status"]:
                     column_config={
                         "Item": st.column_config.SelectboxColumn(
                             "Item",
-                            options=mq.get_enum_values('aforo_residuo_type'),
+                            options=mq.get_enum_values('aforo_residue_type'),
                         ),
                         "Peso (kg)": st.column_config.NumberColumn(
                             "Peso (kg)",
