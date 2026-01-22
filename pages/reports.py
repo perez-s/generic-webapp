@@ -35,7 +35,7 @@ elif location:
     st.write(f"Latitude: {lat}")
     st.write(f"Longitude: {lon}")
 
-limit = st.number_input("Cantidad de registros", min_value=1, max_value=1000, value=50, step=1)
+limit = st.number_input("Cantidad de registros", min_value=1, max_value=1000, value=42, step=1)
 
 if st.button("Generar PDF"):
     with st.spinner("Generando PDF..."):
@@ -55,10 +55,9 @@ if st.button("Generar PDF"):
         fig_b64 = fig.to_image(format="png")
         fig_b64 = base64.b64encode(fig_b64).decode('utf-8')
 
-        aforos = mq.get_recent_aforos(limit=int(limit))
-        aforo_ids = [a.get('id') for a in aforos if a.get('id')]
-        residues_map = mq.get_residues_for_aforos(aforo_ids)
-        pdf_bytes = mr.generate_aforos_pdf(aforos, residues_map=residues_map, fig_b64=fig_b64)
+        aforos = mq.get_aforo_by_id(limit)
+        residues = mq.get_aforos_residues(limit)
+        pdf_bytes = mr.generate_aforos_pdf(aforos, residues=residues, fig_b64=fig_b64)
         if pdf_bytes:
             buf = BytesIO(pdf_bytes)
             filename = f"reporte_aforos_{len(aforos)}.pdf"

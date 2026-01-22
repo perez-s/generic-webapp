@@ -3,7 +3,7 @@ later/
 .env
 __pycache__/
 uploads/
-config.yaml
+*config.yaml
 *.temp
 testing/
 */seed.sql

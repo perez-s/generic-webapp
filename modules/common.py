@@ -18,7 +18,6 @@ from datetime import datetime, date
 from email.mime.application import MIMEApplication
 
 elevencolors = ["blue", "green", "orange", "red", "purple", "brown", "gray", "pink", "teal", "cyan", "magenta"] 
-email_password = os.getenv('EMAIL_PASSWORD')  
 
 # def img_to_base64():
 #     with open("resources/Logo2.png", "rb") as image_file:
@@ -252,7 +251,8 @@ def save_file(file_uploader, file_path) -> str:
         st.toast(f"Error guardando archivo: {e}")
     
 def send_email(to_email: list, operation: Literal['Creation', 'Schedule', 'Cancelled', 'Update'], supabase_return: dict):
-    sender_email = 'no-reply@mywero.com.co'
+    email_password = os.getenv('EMAIL_PASSWORD')
+    sender_email = os.getenv('EMAIL_USER')  
     if operation == 'Creation':
         subject = f'Solicitud No. {supabase_return.get("id")} creada exitosamente'
         created_at = datetime.fromisoformat(supabase_return.get("created_at").replace('Z', '+00:00'))
@@ -284,14 +284,13 @@ def send_email(to_email: list, operation: Literal['Creation', 'Schedule', 'Cance
     msg['Subject'] = subject
     msg['From'] = sender_email
     msg['To'] = ", ".join(to_email)
-    msg.attach(MIMEText(txt_content, 'plain'))
     msg.attach(MIMEText(html_content, 'html'))
     # Send the message via our own SMTP server, but don't include the
 
     # envelope header.
     try:
         with smtplib.SMTP_SSL('mail.mywero.com.co', 465) as server:
-            server.login(sender_email, "QhgD72lIv3pWEher")
+            server.login(sender_email, email_password)
             server.send_message(msg)
     except Exception as e:
         st.toast(f"Error enviando correo electrónico: {e}", icon="❌")
@@ -308,15 +307,20 @@ def get_email_from_request_id(request_ids: list) -> list:
     return list(emails)
 
 def send_aforo_email(to_email: list, aforo_id: int, pdf_bytes_io):
-    sender_email = 'no-reply@mywero.com.co'
+    email_password = os.getenv('EMAIL_PASSWORD')
+    sender_email = os.getenv('EMAIL_USER') 
     subject = f'Aforo No. {aforo_id} registrado exitosamente'
-    txt_content = 'testing'
+    txt_content = 'This is the Aforo confirmation email.'
+    html_content0 = open('./resources/success_email.html').read().replace('{id:}', str(aforo_id))
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
     msg['From'] = sender_email
-    msg['To'] = ", ".join(to_email) if to_email else sender_email
+    msg['To'] = "perez14sebastian@gmail.com"
     msg.attach(MIMEText(txt_content, 'plain'))
+    msg.attach(MIMEText(html_content0, 'html'))
     # Attach a PDF from a BytesIO object named `pdf_bytes_io` if provided
+    print(sender_email)
+    print(email_password)
     try:
         if pdf_bytes_io is not None:
             pdf_bytes_io.seek(0)
@@ -330,9 +334,9 @@ def send_aforo_email(to_email: list, aforo_id: int, pdf_bytes_io):
             st.toast("No hay destinatarios para el correo electrónico.", icon="❌")
             return
         with smtplib.SMTP_SSL('mail.mywero.com.co', 465) as server:
-            server.login(sender_email, "QhgD72lIv3pWEher")
+            server.login(sender_email, email_password)
             # Explicitly pass to_addrs so SMTP issues RCPT TO commands
-            server.send_message(msg, from_addr=sender_email, to_addrs='perez14sebastian@gmail.com')
-            print("Correo electrónico enviado exitosamente.")
+            sent = server.send_message(msg, from_addr=sender_email, to_addrs='perez14sebastian@gmail.com')
+            print(sent)
     except Exception as e:
         st.toast(f"Error enviando correo electrónico: {e}", icon="❌")

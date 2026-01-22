@@ -177,7 +177,7 @@ th{background:#009999; text-align:center; color: #ffffff; font-family: 'Variable
 .bottomleft {
   position: absolute;
   bottom: 8px;
-  left: 18%;
+  left: 5%;
   font-size: 5pt;
   font-family: 'VariableMontserrat';
   font-weight: bold;
@@ -191,14 +191,14 @@ th{background:#009999; text-align:center; color: #ffffff; font-family: 'Variable
 }
 
 .container {
+  display: inline-block;
   position: relative;
-  max-height: 100%;
   margin-left: auto;
   margin-right: auto;
 }
 
 #evidencias img{
-  max-width: 180px;
+  max-height: 250px;
 }
 
 #evidencias .bottomleft{
