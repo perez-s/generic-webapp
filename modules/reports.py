@@ -51,6 +51,8 @@ def build_aforo_html(aforo, residues=None, title="Reporte de Aforos", fig_b64=No
         'map_figure': fig_b64
     })
 
+    print(prepared)
+
     # Locate templates directory
     templates_dir = os.path.join(os.path.dirname(__file__), '..', 'resources', 'templates')
     templates_dir = os.path.normpath(templates_dir)
