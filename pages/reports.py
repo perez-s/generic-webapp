@@ -20,7 +20,6 @@ mc.logout_and_home('./pages/home.py', layout='centered')
 
 st.title("Reportes — Aforos")
 st.write("Genera un PDF con los registros de aforos más recientes.")
-
 location = get_geolocation()
 
 # Check if location permission was denied
@@ -54,8 +53,8 @@ if st.button("Generar PDF"):
 
         fig_b64 = fig.to_image(format="png")
         fig_b64 = base64.b64encode(fig_b64).decode('utf-8')
-
         aforos = mq.get_aforo_by_id(limit)
+        st.write(aforos)
         residues = mq.get_aforos_residues(limit)
         pdf_bytes = mr.generate_aforos_pdf(aforos, residues=residues, fig_b64=fig_b64)
         if pdf_bytes:

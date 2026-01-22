@@ -225,11 +225,11 @@ def get_recent_aforos(limit: int = 100):
 def get_aforo_by_id(aforo_id: int):
     """Return aforo row by id."""
     try:
-        res = supabase.table("aforos").select("*, sucursal(*), users(*)").eq("id", aforo_id).execute()
+        res = supabase.table("aforos").select("*,sucursal(*,clients(*)),users(*)").eq("id", aforo_id).execute()
         return res.data[0] if res.data else None
     except Exception as e:
         print(f"Error fetching aforo by id: {e}")
-        return []
+        return None
 
 def get_aforos_residues(aforo_id: int):
     """Return aforos_residues rows for given aforo id."""

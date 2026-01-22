@@ -60,9 +60,6 @@ def firma_dialog(
                     lat = location['coords']['latitude']
                     lon = location['coords']['longitude']
 
-                
-
-                print(firma_str)
                 # Create aforo record
                 res = mq.create_aforo_record(
                     vehiculo_placa=vehiculo_placa,
@@ -113,6 +110,8 @@ def firma_dialog(
 
                 aforo = mq.get_aforo_by_id(res.data[0]['id'])
                 residues = mq.get_aforos_residues(aforo['id'])
+
+
                 
                 pdf_bytes = mr.generate_aforos_pdf(
                     aforo=aforo,
@@ -126,13 +125,9 @@ def firma_dialog(
                     pdf_bytes_io=BytesIO(pdf_bytes)
                 )
 
-                # st.write(BytesIO(pdf_bytes))
+                st.write(BytesIO(pdf_bytes))
 
-                # # Send confirmation email with PDF attached
-
-
-                            
-                st.toast("✅ Aforo registrado con éxito")
+                # Send confirmation email with PDF attached
         else:
             st.error("Por favor, proporciona una firma antes de confirmar.")
 

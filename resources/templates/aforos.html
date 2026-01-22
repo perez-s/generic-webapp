@@ -34,229 +34,204 @@
                 <th>Consecutivo</th>
             </tr>
             <tr>
-                {% for a in aforos %}
-                <td class="consecutivo">W-{{ a.id }}</td>
-                {% endfor %}
+                <td class="consecutivo">W-{{ aforos[0].id }}</td>
             </tr>
         </table>
-        {% if not aforos %}
-            <p>No hay registros de aforos.</p>
-        {% else %}
-            {% for a in aforos %}
-                <table id="general-info">
-                    <tr>
-                        <th colspan="4" class="gi-title">Información general</th>
-                    </tr>
-                    <tr>
-                        <th>Ciudad</th>
-                        <td>Cali</td>
-                        <th>Cliente</th>
-                        <td>Qbano</td>
-                    </tr>
-                    <tr>
-                        <th>Sucursal</th>
-                        <td>Cañaveralejo</td>
-                        <th>Dirección</th>
-                        <td>Cl 1a 62a 130</td>
-                    </tr>
-                    <tr>
-                        <th>Barrio</th>
-                        <td>La Cascada</td>
-                        <th>Correo</th>
-                        <td>qbano@gmail.com</td>
-                    </tr>
-                    <tr>
-                        <th>NIT Cliente</th>
-                        <td>987654321-0</td>
-                        <th>NIT Sucursal</th>
-                        <td>987654321-0</td>
-                    </tr>
-                </table>
+        <table id="general-info">
+            <tr>
+                <th colspan="4" class="gi-title">Información general</th>
+            </tr>
+            <tr>
+                <th>Ciudad</th>
+                <td>{{ aforos[0].ciudad }}</td>
+                <th>Cliente</th>
+                <td>{{ aforos[0].cliente }}</td>
+            </tr>
+            <tr>
+                <th>Sucursal</th>
+                <td>{{ aforos[0].sucursal }}</td>
+                <th>Dirección</th>
+                <td>{{ aforos[0].direccion }}</td>
+            </tr>
+            <tr>
+                <th>Barrio</th>
+                <td>{{ aforos[0].barrio }}</td>
+                <th>Correo</th>
+                <td>{{ aforos[0].correo }}</td>
+            </tr>
+            <tr>
+                <th>NIT Cliente</th>
+                <td>{{ aforos[0].cliente_nit }}</td>
+                <th>NIT Sucursal</th>
+                <td>{{ aforos[0].sucursal_nit }}</td>
+            </tr>
+        </table>
 
-                <table id="gestor-info">
-                    <tr>
-                        <th colspan="4" class="gi-title">Información del servicio</th>
-                    </tr>
-                    <tr>
-                        <th>Operario</th>
-                        <td>{{ a.operario_name }}</td>
-                        <th>Placa</th>
-                        <td>MHP929</td>
-                    </tr>
-                    <tr>
-                        <th>Fecha de recolección</th>
-                        <td>{{ a.created_at }}</td>
-                        <th>Hora de recolección</th>
-                        <td>{{ a.created_at }}</td>
-                    </tr>
-                </table>
+        <table id="gestor-info">
+            <tr>
+                <th colspan="4" class="gi-title">Información del servicio</th>
+            </tr>
+            <tr>
+                <th>Operario</th>
+                <td>{{ aforos[0].operario }}</td>
+                <th>Placa</th>
+                <td>{{ aforos[0].vehiculo_placa }}</td>
+            </tr>
+            <tr>
+                <th>Fecha de recolección</th>
+                <td>{{ aforos[0].fecha }}</td>
+                <th>Hora de recolección</th>
+                <td>{{ aforos[0].hora }}</td>
+            </tr>
+        </table>
 
-                {% if a.residues %}
-                    <table id="residuos">
-                        <tr>
-                            <th colspan="5" class="gi-title">Residuos recolectados</th>
-                        </tr>
-                        <tr>
-                            <th>Item</th>
-                            <th>Categoría</th>
-                            <th>Tipo de contenedor</th>
-                            <th>Cantidad</th>
-                            <th>Peso (kg)</th>
-                        </tr>
-                        {% set ns = namespace(total_peso=0, total_contenedores=0) %}
-                        {% for r in a.residues %}
-                            <tr>
-                                <td style="width: 8%;">{{ loop.index }}</td>
-                                <td style="width: 31%; text-align: right;">{{ r.residuo or r.residuo_name or 'No aplica' }}</td>
-                                <td style="width: 31%; text-align: right;">{{ r.contenedor or 'No aplica' }}</td>
-                                <td style="width: 15%;">{{ r.cantidad_contenedores or r.cantidad or 'No aplica' }}</td>
-                                <td style="width: 15%;">{{ r.weight or 'No aplica' }}</td>
-                            </tr>
-                            {% set ns.total_peso = ns.total_peso + (r.weight|float(0)) %}
-                        {% endfor %}
-                        <tr>
-                            <td colspan="3" style="border: none;"></td>
-                            <th>Total</th>
-                            <td>{{ ns.total_peso }}</td>
-                        </tr>
-                    </table>
-                {% endif %}
-
-                <table id="observaciones">
+        {% if aforos[0].residues %}
+            <table id="residuos">
+                <tr>
+                    <th colspan="5" class="gi-title">Residuos recolectados</th>
+                </tr>
+                <tr>
+                    <th>Item</th>
+                    <th>Categoría</th>
+                    <th>Tipo de contenedor</th>
+                    <th>Cantidad</th>
+                    <th>Peso (kg)</th>
+                </tr>
+                {% set ns = namespace(total_peso=0, total_contenedores=0) %}
+                {% for r in aforos[0].residues %}
                     <tr>
-                        <th class="gi-title">Observaciones</th>
+                        <td style="width: 8%;">{{ loop.index }}</td>
+                        <td style="width: 31%; text-align: right;">{{ r.residuo or r.residuo_name or 'No aplica' }}</td>
+                        <td style="width: 31%; text-align: right;">{{ r.contenedor or 'No aplica' }}</td>
+                        <td style="width: 15%;">{{ r.cantidad_contenedores or r.cantidad or 'No aplica' }}</td>
+                        <td style="width: 15%;">{{ r.weight or 'No aplica' }}</td>
                     </tr>
-                    <tr>
-                        <td>{{ a.observaciones or '' }}</td>
-                    </tr>
-                </table>
-
-                <table id="firmas">
-                    <tr>
-                        <th colspan="2">Información de personal</th>
-                        <th>Firma - cliente</th>
-                    </tr>
-                    <tr>
-                        <th rowspan="2" style="width: 8%;">WERO</th>
-                        <td style="width: 42%;">Sebastián Pérez Cuadros</td>
-                        <td rowspan="4" style="width: 50%; text-align: center; vertical-align: middle;">
-                            {% if a.firma %}
-                                <img class="firma" src="data:image/png;base64,{{ a.firma|safe }}" alt="">
-                            {% endif %}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>CC 1193414920</td>
-                    </tr>
-                    <tr>
-                        <th rowspan="2">Cliente</th>
-                        <td>Juanito Pérez</td>
-                    </tr>
-                    <tr>
-                        <td>CC 1234567890</td>
-                    </tr>
-                    <!-- <tr>
-                        <td>
-                            <p class="bold-this">Firma operario:</p>
-                            <p>Sebastián Pérez Cuadros</p>
-                            <p>CC 1193414920</p>
-                        </td>
-                        <td>
-                            <p class="bold-this">Firma cliente:</p>
-                            {% if a.firma %}
-                                <img class="firma" src="data:image/png;base64,{{ a.firma|safe }}" alt="">
-                                <p>Juanito Pérez</p>
-                                <p>CC 1234567890</p>
-                            {% else %}
-                                <p>__________________________</p>
-                            {% endif %}
-                        </td>
-                    </tr> -->
-                </table>
-
-                <table id="evidencias">
-                    <tr>
-                        <th colspan="3" class="gi-title">Evidencias</th>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class="container">
-                                <p class="bold-this">Foto fachada:</p>
-                                {% if a.evidencia_fachada %}
-                                <img class="ev-fachada" src="data:image/png;base64,{{ a.evidencia_fachada|safe }}" alt="">
-                                <div class="bottomleft">
-                                    <p>2024-06-15</p>
-                                    <p>10:21 AM</p>
-                                    {% set lat = 3.4492150135426565 %}
-                                    {% set lat_dir = 'N' if lat >= 0 else 'S' %}
-                                    {% set lat_abs = lat|abs %}
-                                    {% set lat_deg = lat_abs|int %}
-                                    {% set lat_min_f = (lat_abs - lat_deg) * 60 %}
-                                    {% set lat_min = lat_min_f|int %}
-                                    {% set lat_sec = (lat_min_f - lat_min) * 60 %}
-                                    {% set lon = -76.53282332420354 %}
-                                    {% set lon_dir = 'E' if lon >= 0 else 'W' %}
-                                    {% set lon_abs = lon|abs %}
-                                    {% set lon_deg = lon_abs|int %}
-                                    {% set lon_min_f = (lon_abs - lon_deg) * 60 %}
-                                    {% set lon_min = lon_min_f|int %}
-                                    {% set lat_sec = (lat_min_f - lat_min) * 60 %}                                    
-                                    <p>{{ lat_deg }}° {{ lat_min }}' {{  '%.3f' % lat_sec }}'' {{ lat_dir }}, {{ lon_deg }}° {{ lon_min }}' {{  '%.3f' % lat_sec }}'' {{ lon_dir }}</p>
-                                </div>
-                                {% else %}
-                                    <p>No hay evidencia fotográfica de la fachada.</p>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="container">
-                                <p class="bold-this">Foto residuos:</p>
-                                {% if a.evidencia_residuos %}
-                                <img class="ev-residuos" src="data:image/png;base64,{{ a.evidencia_residuos|safe }}" alt="">
-                                <div class="bottomleft">
-                                    <p>2024-06-15</p>
-                                    <p>10:21 AM</p>
-                                    {% set lat = 3.4492150135426565 %}
-                                    {% set lat_dir = 'N' if lat >= 0 else 'S' %}
-                                    {% set lat_abs = lat|abs %}
-                                    {% set lat_deg = lat_abs|int %}
-                                    {% set lat_min_f = (lat_abs - lat_deg) * 60 %}
-                                    {% set lat_min = lat_min_f|int %}
-                                    {% set lat_sec = (lat_min_f - lat_min) * 60 %}
-                                    {% set lon = -76.53282332420354 %}
-                                    {% set lon_dir = 'E' if lon >= 0 else 'W' %}
-                                    {% set lon_abs = lon|abs %}
-                                    {% set lon_deg = lon_abs|int %}
-                                    {% set lon_min_f = (lon_abs - lon_deg) * 60 %}
-                                    {% set lon_min = lon_min_f|int %}
-                                    {% set lat_sec = (lat_min_f - lat_min) * 60 %}                                    
-                                    <p>{{ lat_deg }}° {{ lat_min }}' {{  '%.3f' % lat_sec }}'' {{ lat_dir }}, {{ lon_deg }}° {{ lon_min }}' {{  '%.3f' % lat_sec }}'' {{ lon_dir }}</p>
-                                {% else %}
-                                    <p>No hay evidencia fotográfica de los residuos.</p>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="container">
-                                <p class="bold-this">Ubicación:</p>
-                                {% if a.map_figure %}
-                                <img class="ev" src="data:image/png;base64,{{ a.map_figure|safe }}" alt="">
-                                {% else %}
-                                    <p>No hay evidencia fotográfica de la fachada.</p>
-                                {% endif %}
-                            </div>
-                        </td>                    
-                    </tr>
-                </table>
-
-                <div id="footer-info">
-                    <p>Gestor SAS</p>
-                    <p>NIT 123456789-0</p>
-                    <p>Calle 100 # 50-50, Cali</p>
-                    <p>gestor@gmail.com - Tel: 555-1234</p>
-                </div>
-            {% endfor %}
+                    {% set ns.total_peso = ns.total_peso + (r.weight|float(0)) %}
+                {% endfor %}
+                <tr>
+                    <td colspan="3" style="border: none;"></td>
+                    <th>Total</th>
+                    <td>{{ ns.total_peso }}</td>
+                </tr>
+            </table>
         {% endif %}
+
+        <table id="observaciones">
+            <tr>
+                <th class="gi-title">Observaciones</th>
+            </tr>
+            <tr>
+                <td>{{ aforos[0].observaciones or '' }}</td>
+            </tr>
+        </table>
+
+        <table id="firmas">
+            <tr>
+                <th colspan="2">Información de personal</th>
+                <th>Firma - cliente</th>
+            </tr>
+            <tr>
+                <th rowspan="2" style="width: 8%;">WERO</th>
+                <td style="width: 42%;">{{ aforos[0].operario }}</td>
+                <td rowspan="4" style="width: 50%; text-align: center; vertical-align: middle;">
+                    {% if aforos[0].firma %}
+                        <img class="firma" src="data:image/png;base64,{{ aforos[0].firma|safe }}" alt="">
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>{{ aforos[0].operario_cedula }}</td>
+            </tr>
+            <tr>
+                <th rowspan="2">Cliente</th>
+                <td>{{ aforos[0].nombre_firma }}</td>
+            </tr>
+            <tr>
+                <td>{{ aforos[0].cedula_firma }}</td>
+            </tr>
+        </table>
+
+        <table id="evidencias">
+            <tr>
+                <th colspan="3" class="gi-title">Evidencias</th>
+            </tr>
+            <tr>
+                <td>
+                    <div class="container">
+                        <p class="bold-this">Foto fachada:</p>
+                        {% if aforos[0].evidencia_fachada %}
+                        <img class="ev-fachada" src="data:image/png;base64,{{ aforos[0].evidencia_fachada|safe }}" alt="">
+                        <div class="bottomleft">
+                            <p>{{ aforos[0].fecha }}</p>
+                            <p>{{ aforos[0].hora }}</p>
+                            {% set lat = aforos[0].latitud %}
+                            {% set lat_dir = 'N' if lat >= 0 else 'S' %}
+                            {% set lat_abs = lat|abs %}
+                            {% set lat_deg = lat_abs|int %}
+                            {% set lat_min_f = (lat_abs - lat_deg) * 60 %}
+                            {% set lat_min = lat_min_f|int %}
+                            {% set lat_sec = (lat_min_f - lat_min) * 60 %}
+                            {% set lon = aforos[0].longitud %}
+                            {% set lon_dir = 'E' if lon >= 0 else 'W' %}
+                            {% set lon_abs = lon|abs %}
+                            {% set lon_deg = lon_abs|int %}
+                            {% set lon_min_f = (lon_abs - lon_deg) * 60 %}
+                            {% set lon_min = lon_min_f|int %}
+                            {% set lat_sec = (lat_min_f - lat_min) * 60 %}                                    
+                            <p>{{ lat_deg }}° {{ lat_min }}' {{  '%.3f' % lat_sec }}'' {{ lat_dir }}, {{ lon_deg }}° {{ lon_min }}' {{  '%.3f' % lat_sec }}'' {{ lon_dir }}</p>
+                        </div>
+                        {% else %}
+                            <p>No hay evidencia fotográfica de la fachada.</p>
+                        {% endif %}
+                    </div>
+                </td>
+                <td>
+                    <div class="container">
+                        <p class="bold-this">Foto residuos:</p>
+                        {% if aforos[0].evidencia_residuos %}
+                        <img class="ev-residuos" src="data:image/png;base64,{{ aforos[0].evidencia_residuos|safe }}" alt="">
+                        <div class="bottomleft">
+                            <p>{{ aforos[0].fecha }}</p>
+                            <p>{{ aforos[0].hora }}</p>
+                            {% set lat = aforos[0].latitud %}
+                            {% set lat_dir = 'N' if lat >= 0 else 'S' %}
+                            {% set lat_abs = lat|abs %}
+                            {% set lat_deg = lat_abs|int %}
+                            {% set lat_min_f = (lat_abs - lat_deg) * 60 %}
+                            {% set lat_min = lat_min_f|int %}
+                            {% set lat_sec = (lat_min_f - lat_min) * 60 %}
+                            {% set lon = aforos[0].longitud %}
+                            {% set lon_dir = 'E' if lon >= 0 else 'W' %}
+                            {% set lon_abs = lon|abs %}
+                            {% set lon_deg = lon_abs|int %}
+                            {% set lon_min_f = (lon_abs - lon_deg) * 60 %}
+                            {% set lon_min = lon_min_f|int %}
+                            {% set lat_sec = (lat_min_f - lat_min) * 60 %}                                    
+                            <p>{{ lat_deg }}° {{ lat_min }}' {{  '%.3f' % lat_sec }}'' {{ lat_dir }}, {{ lon_deg }}° {{ lon_min }}' {{  '%.3f' % lat_sec }}'' {{ lon_dir }}</p>
+                        {% else %}
+                            <p>No hay evidencia fotográfica de los residuos.</p>
+                        {% endif %}
+                    </div>
+                </td>
+                <td>
+                    <div class="container">
+                        <p class="bold-this">Ubicación:</p>
+                        {% if aforos[0].map_figure %}
+                        <img class="ev" src="data:image/png;base64,{{ aforos[0].map_figure|safe }}" alt="">
+                        {% else %}
+                            <p>No hay evidencia fotográfica de la ubicación.</p>
+                        {% endif %}
+                    </div>
+                </td>                    
+            </tr>
+        </table>
+
+        <div id="footer-info">
+            <p>WERO SAS</p>
+            <p>NIT 901349991-1</p>
+            <p>Calle 3 Oeste # 3A-18, Cali</p>
+            <p>wero.com.co - Tel: 318 3065004</p>
+        </div>
     </body>
 </html>
         

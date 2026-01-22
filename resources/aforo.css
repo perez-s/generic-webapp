@@ -199,6 +199,7 @@ th{background:#009999; text-align:center; color: #ffffff; font-family: 'Variable
 
 #evidencias img{
   max-height: 250px;
+  max-width: 188px;
 }
 
 #evidencias .bottomleft{
