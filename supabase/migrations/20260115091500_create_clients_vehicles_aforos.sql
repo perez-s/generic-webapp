@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS public.clients (
 
 CREATE TABLE IF NOT EXISTS public.sucursal (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  etapa text,
   cliente_id bigint NOT NULL,
   sucursal text,
   ciudad text,

@@ -9,6 +9,13 @@ supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(supabase_url, supabase_key)
 
+def get_enum_values(enum_name: str):
+    try:
+        result = supabase.rpc('get_types', {'enum_type': f'{enum_name}'}).execute()
+        return sorted(result.data)
+    except Exception as e:
+        print(f"Error fetching enum values: {e}")
+
 def get_residuo_corriente_names():
     response = supabase.table("residuo_corriente").select("residuo_name").execute()
     return [item["residuo_name"] for item in response.data]

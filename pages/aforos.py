@@ -221,7 +221,7 @@ if ss["authentication_status"]:
 
         # Other inputs
         # Use current date and current time automatically (no user inputs)
-        is_there_residues = st.radio("¿Hay residuos?", options=['Si', 'No'], index=1, horizontal=True)
+        is_there_residues = st.radio("¿Hay residuos?", options=['Si', 'No'], index=0, horizontal=True)
         if is_there_residues == 'No':
             st.info("No hay residuos para registrar en este aforo.")
             st.camera_input("Tomar evidencia fotográfica de la fachada")
@@ -238,7 +238,7 @@ if ss["authentication_status"]:
                     column_config={
                         "Item": st.column_config.SelectboxColumn(
                             "Item",
-                            options=["cartón", "plástico", "vidrio", "metal", "madera", "electrónicos", "otros"],
+                            options=mq.get_enum_values('aforo_residuo_type'),
                         ),
                         "Peso (kg)": st.column_config.NumberColumn(
                             "Peso (kg)",
@@ -259,11 +259,11 @@ if ss["authentication_status"]:
                     column_config={
                         "Item": st.column_config.SelectboxColumn(
                             "Item",
-                            options=["cartón", "plástico", "vidrio", "metal", "madera", "electrónicos", "otros"],
+                            options=mq.get_enum_values('aforo_residuo_type'),
                         ),
                         "Tipo de contenedor": st.column_config.SelectboxColumn(
                             "Tipo de contenedor",
-                            options=["Bolsas", "Contenedores", "Tarros", "Sacos", "Palets"],
+                            options=mq.get_enum_values('aforo_container_type'),
                         ),
                         "Cantidad": st.column_config.NumberColumn(
                             "Cantidad",
