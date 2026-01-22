@@ -315,8 +315,9 @@ def MenuButtons(location: Literal['residuos_peligrosos', 'home', 'residuos_solid
                 render_tiles(wero_tiles)
 
             if ss.username in testing:
-                testing_tiles = [aforos_tile, entry_forms_tile, reports_tile]
-                render_tiles(testing_tiles)
+                st.switch_page("./pages/aforos.py")
+                # testing_tiles = [aforos_tile, entry_forms_tile, reports_tile]
+                # render_tiles(testing_tiles)
         
         elif location == 'residuos_peligrosos':
             if ss.username in caracol:
