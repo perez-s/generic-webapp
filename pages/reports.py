@@ -38,8 +38,9 @@ limit = st.number_input("Cantidad de registros", min_value=1, max_value=1000, va
 
 if st.button("Generar PDF"):
     with st.spinner("Generando PDF..."):
-        fig = px.scatter_map(lat=[lat] if location and 'coords' in location else [],
-                            lon=[lon] if location and 'coords' in location else [],
+        aforos = mq.get_aforo_by_id(limit)
+        fig = px.scatter_map(lat=[aforos['latitude']] if location and 'coords' in location else [],
+                            lon=[aforos['longitude']] if location and 'coords' in location else [],
                             zoom=18, #wont work with values over 18
                             color_discrete_sequence=["red"],
                             map_style="open-street-map",
@@ -53,7 +54,7 @@ if st.button("Generar PDF"):
 
         fig_b64 = fig.to_image(format="png")
         fig_b64 = base64.b64encode(fig_b64).decode('utf-8')
-        aforos = mq.get_aforo_by_id(limit)
+
         st.write(aforos)
         residues = mq.get_aforos_residues(limit)
         pdf_bytes = mr.generate_aforos_pdf(aforos, residues=residues, fig_b64=fig_b64)
