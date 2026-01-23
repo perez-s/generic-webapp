@@ -40,6 +40,7 @@ def firma_dialog(
     if st.button("Confirmar Firma"):
         if canvas_result.image_data is not None:
             with st.spinner("Registrando aforo y enviando manifiesto de recolección..."):
+                st.toast("⏳ Registrando aforo...")
                 # Convert the image data to a PIL Image
                 firma = Image.fromarray(canvas_result.image_data.astype('uint8'), 'RGBA')
                 buffered = BytesIO()
@@ -90,7 +91,7 @@ def firma_dialog(
                 df = df.to_dict(orient='records')
                 mq.create_aforo_residuo_record(df)
 
-                st.toast("✅ Aforo registrado con éxito...")
+                st.toast("⏳ Generando manifiesto de recolección...")
 
                 fig = px.scatter_map(lat=[lat] if location and 'coords' in location else [],
                                     lon=[lon] if location and 'coords' in location else [],
@@ -125,7 +126,8 @@ def firma_dialog(
                     pdf_bytes_io=BytesIO(pdf_bytes)
                 )
 
-                st.write(BytesIO(pdf_bytes))
+                st.toast("✅ Manifiesto de recolección enviado por correo.")
+                st.rerun()                
 
                 # Send confirmation email with PDF attached
         else:
