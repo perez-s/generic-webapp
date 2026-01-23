@@ -162,9 +162,6 @@ if ss["authentication_status"]:
 
     mc.logout_and_home('./pages/home.py', layout='centered')
 
-    if st.button("Volver al Inicio", type="primary"):
-        st.switch_page('./pages/entry_forms.py')
-
     if st.button("Ruta del Día", type="primary"):
         todays_route()
     st.subheader("📥 Registro de Aforos")
