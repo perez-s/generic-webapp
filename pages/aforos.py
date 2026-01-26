@@ -241,7 +241,8 @@ if ss["authentication_status"]:
                         ),
                         "Peso (kg)": st.column_config.NumberColumn(
                             "Peso (kg)",
-                            format="%f",
+                            min_value=0.0,
+                            step=0.1,
                         ),
                     },
                 )
