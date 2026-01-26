@@ -16,6 +16,7 @@ from datetime import datetime, timezone, timedelta
 import os
 import locale
 import pandas as pd
+from dateutil import parser
 
 locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
 
@@ -172,18 +173,19 @@ def display_pending_requests_table(requests_data, userid):
         rows["userid"] = rows["users"].apply(lambda x: x["id"] if isinstance(x, dict) else x)
         rows["username"] = rows["users"].apply(lambda x: x["username"] if isinstance(x, dict) else x)
         rows = rows[(rows["current_status"] == "Pendiente") & (rows["userid"] == userid)]
-        rows = rows[["id","username","current_status","request_category","measure_type","estimated_amount","created_at","updated_at"]]
+        rows = rows[["id","username","created_at","current_status","request_category","measure_type","estimated_amount","updated_at"]]
         if rows.empty:
             st.info(f"📭 No hay solicitudes pendientes disponibles")
             return
-        rows["created_at"] = pd.to_datetime(rows["created_at"]).dt.tz_convert('America/Bogota').dt.strftime("%d/%m/%Y %H:%M")
-        rows["updated_at"] = pd.to_datetime(rows["updated_at"]).dt.tz_convert('America/Bogota').dt.strftime("%d/%m/%Y %H:%M")
+        rows["created_at"] = rows["created_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')
+        rows["updated_at"] = rows["updated_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')   
         rows.set_index("id", inplace=True)
         rows["Seleccionar"] = False
         displayed_table = st.data_editor(
             rows,
             width="stretch",
             disabled=["id", "username","current_status", "request_category", "measure_type", "estimated_amount", "created_at", "updated_at"], 
+            hide_index=True,
             column_config={
                 "id": "ID",
                 "Seleccionar": st.column_config.CheckboxColumn(
@@ -204,11 +206,11 @@ def display_pending_requests_table(requests_data, userid):
                     options=get_enum_values("status_type"),
                     color=["blue", "green", "red"]
                 ),
-                "created_at": st.column_config.DateTimeColumn(
+                "created_at": st.column_config.DatetimeColumn(
                     "Fecha de creación",
                     format="YYYY/MM/DD HH:mm"
                 ),  
-                "updated_at": st.column_config.DateTimeColumn(
+                "updated_at": st.column_config.DatetimeColumn(
                     "Última modificación",
                     format="YYYY/MM/DD HH:mm"
                 )
@@ -233,7 +235,7 @@ def display_pending_requests_table(requests_data, userid):
                     confirm_delete_dialog(displayed_table[displayed_table["Seleccionar"]].index.tolist())
            
     except Exception as e:
-        st.info(f"📭 No hay solicitudes disponibles")
+        st.info(f"Error al mostrar las solicitudes {e}")
 
 def display_all_requests_table(requests_data, userid):
     try:
@@ -242,17 +244,18 @@ def display_all_requests_table(requests_data, userid):
         rows["userid"] = rows["users"].apply(lambda x: x["id"] if isinstance(x, dict) else x)
         rows["username"] = rows["users"].apply(lambda x: x["username"] if isinstance(x, dict) else x)
         rows = rows[(rows["userid"] == userid)]
-        rows = rows[["id","username","current_status","request_category","measure_type","estimated_amount","created_at","updated_at", "admin_note"]]
+        rows = rows[["id","username","created_at","current_status","request_category","measure_type","estimated_amount","updated_at", "admin_note"]]
+        rows["created_at"] = rows["created_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')
+        rows["updated_at"] = rows["updated_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')
         if rows.empty:
             st.info(f"📭 No hay solicitudes pendientes disponibles")
             return
-        rows["created_at"] = pd.to_datetime(rows["created_at"]).dt.tz_convert('America/Bogota').dt.strftime("%d/%m/%Y %H:%M")
-        rows["updated_at"] = pd.to_datetime(rows["updated_at"]).dt.tz_convert('America/Bogota').dt.strftime("%d/%m/%Y %H:%M")
         rows.set_index("id", inplace=True)
 
         st.dataframe(
             rows,
             width="stretch",
+            hide_index=True,
             column_config={
                 "id": "ID",
                 "username": "Usuario",
@@ -269,13 +272,19 @@ def display_all_requests_table(requests_data, userid):
                     options=get_enum_values("status_type"),
                     color=["blue", "green", "red"]
                 ),
-                "created_at": "Fecha de creación",
-                "updated_at": "Última modificación",
+                "created_at": st.column_config.DatetimeColumn(
+                    "Fecha de creación",
+                    format="YYYY/MM/DD HH:mm"
+                    ),
+                "updated_at": st.column_config.DatetimeColumn(
+                    "Última modificación",
+                    format="YYYY/MM/DD HH:mm"
+                    ),
                 "admin_note": "Nota del administrador"
             }
         )
     except Exception as e:
-        st.info(f"📭 No hay solicitudes disponibles")
+        st.info(f"Error al mostrar las solicitudes {e}")
 
 @st.dialog("⚠️ Confirmar eliminación")
 def confirm_delete_dialog(request_ids: list):

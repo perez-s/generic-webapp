@@ -646,6 +646,7 @@ def display_all_providers_table(providers_data):
             rows,
             width="stretch",
             disabled=["id","provider_name", "provider_nit", "provider_category", "created_at", "updated_at", "Estado"],
+            hide_index=True,
             column_config={
                 "id": "ID",
                 "Seleccionar": st.column_config.CheckboxColumn(

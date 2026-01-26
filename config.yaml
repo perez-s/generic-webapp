@@ -54,11 +54,11 @@ credentials:
       password: $2b$12$4lDzBStBXWEjiQuva1WS2OBi2.cZEzXNcckiopgS/FmZhRyYWqFRy
       role: caracol_users
     wero-caracol:
-      email: app+wero-caracol@mywero.com.co
+      email: testing@mywero.com.co
       failed_login_attempts: 0
       logged_in: false
       name: Wero Caracol
-      password: $2b$12$OUpzEiOMAe0OUW9iiW5ChO9bc6dqnHvPlV3knlrYRrD7jE984wIh6
+      password: $2b$12$gW2LE7lQB1T1mnjWdkFhO.tHnlYZUzNfFKqv/wEk4sGtgG6.s3RDy
       role: wero
 preauthorized:
   emails:

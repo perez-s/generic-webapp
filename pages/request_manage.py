@@ -19,6 +19,8 @@ import pandas as pd
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from dateutil import parser
+
 locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
 
 # Cargar variables de entorno y configurar Supabase
@@ -76,20 +78,21 @@ def display_pending_requests_table(requests_data):
         rows = rows[["id","users","current_status", "request_category","measure_type","estimated_amount", "created_at", "updated_at"]]
         rows["userid"] = rows["users"].apply(lambda x: x["id"] if isinstance(x, dict) else x)
         rows["username"] = rows["users"].apply(lambda x: x["username"] if isinstance(x, dict) else x)
-        rows = rows[["id","username","current_status", "request_category","measure_type","estimated_amount", "created_at", "updated_at"]]       
+        rows = rows[["id","created_at","username","current_status", "request_category","measure_type","estimated_amount", "updated_at"]]       
         rows = rows[rows["current_status"] == "Pendiente"]
-        rows["created_at"] = pd.to_datetime(rows["created_at"])
-        rows["updated_at"] = pd.to_datetime(rows["updated_at"])
-        rows.set_index("id", inplace=True)
-        rows["Seleccionar"] = False
         if rows.empty:
             st.info("📭 No hay solicitudes pendientes aun.")
             return
+        rows["created_at"] = rows["created_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')
+        rows["updated_at"] = rows["updated_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')
+        rows.set_index("id", inplace=True)
+        rows["Seleccionar"] = False
 
         displayed_table = st.data_editor(
             rows,
             width="stretch",
-            disabled=["id","username","current_status", "request_category", "measure_type", "estimated_amount", "created_at", "updated_at"], 
+            disabled=["created_at","username","current_status", "request_category", "measure_type", "estimated_amount", "updated_at"], 
+            hide_index=True,
             column_config={
                 "id": "ID",
                 "username": "Usuario",
@@ -136,9 +139,9 @@ def display_all_requests_table(requests_data):
         rows = rows[["id","users","current_status", "request_category","measure_type","estimated_amount", "created_at", "updated_at"]]
         rows["userid"] = rows["users"].apply(lambda x: x["id"] if isinstance(x, dict) else x)
         rows["username"] = rows["users"].apply(lambda x: x["username"] if isinstance(x, dict) else x)
-        rows = rows[["id","username","current_status", "request_category","measure_type","estimated_amount", "created_at", "updated_at"]]       
-        rows["created_at"] = pd.to_datetime(rows["created_at"])
-        rows["updated_at"] = pd.to_datetime(rows["updated_at"])
+        rows = rows[["id","created_at","username","current_status", "request_category","measure_type","estimated_amount", "updated_at"]]       
+        rows["created_at"] = rows["created_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')
+        rows["updated_at"] = rows["updated_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')
         rows.set_index("id", inplace=True)
         if rows.empty:
             st.info("📭 No hay solicitudes disponibles aun.")
@@ -147,6 +150,7 @@ def display_all_requests_table(requests_data):
         displayed_table = st.dataframe(
             rows,
             width="stretch",
+            hide_index=True,
             column_config={
                 "id": "ID",
                 "Seleccionar": st.column_config.CheckboxColumn(
@@ -309,9 +313,9 @@ def display_schedule_pickup_table(pickup_data):
         rows = pd.DataFrame(pickup_data)
         rows = rows[["id","providers","pickup_status", "pickup_date", "created_at", "updated_at"]]
         rows["provider_name"] = rows["providers"].apply(lambda x: x["provider_name"] if isinstance(x, dict) else x)
-        rows = rows[["id","provider_name","pickup_status", "pickup_date", "created_at", "updated_at"]]
-        rows["created_at"] = pd.to_datetime(rows["created_at"])
-        rows["updated_at"] = pd.to_datetime(rows["updated_at"])
+        rows = rows[["id", "created_at","provider_name","pickup_status", "pickup_date", "updated_at"]]
+        rows["created_at"] = rows["created_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')
+        rows["updated_at"] = rows["updated_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')
         rows = rows[rows["pickup_status"] == "Programada"]
         rows.set_index("id", inplace=True)
         rows["Seleccionar"] = False
@@ -339,6 +343,7 @@ def display_schedule_pickup_table(pickup_data):
             rows,
             width="stretch",
             disabled=["id","pickup_status", "pickup_date", "provider_name", "created_at", "updated_at", "request_ids"], 
+            hide_index=True,
             column_config={
                 "id": "ID",
                 "Seleccionar": st.column_config.CheckboxColumn(
@@ -390,9 +395,9 @@ def display_all_pickup_table(pickup_data):
         rows = pd.DataFrame(pickup_data)
         rows = rows[["id", "providers", "pickup_status", "pickup_date", "created_at", "updated_at"]]
         rows["provider_name"] = rows["providers"].apply(lambda x: x["provider_name"] if isinstance(x, dict) else x)
-        rows = rows[["id","provider_name","pickup_status", "pickup_date", "created_at", "updated_at"]]
-        rows["created_at"] = pd.to_datetime(rows["created_at"])
-        rows["updated_at"] = pd.to_datetime(rows["updated_at"])
+        rows = rows[["id", "created_at","provider_name","pickup_status", "pickup_date", "updated_at"]]
+        rows["created_at"] = rows["created_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')
+        rows["updated_at"] = rows["updated_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')
         rows.set_index("id", inplace=True)
         rows["Seleccionar"] = False
         pickup_ids = rows.index.tolist()
@@ -415,7 +420,8 @@ def display_all_pickup_table(pickup_data):
             rows,
             key="all_pickups_table",
             width="stretch",
-            disabled=["id","pickup_status", "pickup_date", "provider_name", "created_at", "updated_at", "request_ids"], 
+            disabled=["id","pickup_status", "pickup_date", "provider_name", "created_at", "updated_at", "request_ids"],
+            hide_index=True,
             column_config={
                 "id": "ID",
                 "Seleccionar": st.column_config.CheckboxColumn(
