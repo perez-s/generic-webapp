@@ -7,6 +7,7 @@ import os
 import jinja2
 import modules.common as mc
 import streamlit as st
+import pytz
 
 
 
@@ -36,8 +37,8 @@ def build_aforo_html(aforo, residues=None, title="Reporte de Aforos", fig_b64=No
         'sucursal_nit': aforo['sucursal']['nit'],
         'operario': aforo['users']['full_name'],
         'vehiculo_placa': aforo['vehiculo_placa'],
-        'fecha': datetime.fromisoformat(aforo['created_at']).strftime("%Y-%m-%d"),
-        'hora': datetime.fromisoformat(aforo['created_at']).strftime("%I:%M %p"),
+        'fecha': datetime.fromisoformat(aforo['created_at']).astimezone(pytz.timezone("America/Bogota")).strftime("%Y-%m-%d"),
+        'hora': datetime.fromisoformat(aforo['created_at']).astimezone(pytz.timezone("America/Bogota")).strftime("%I:%M %p"),
         'observaciones': aforo['observaciones'] or '',
         'operario_cedula': aforo['users']['cedula'] or '',
         'latitud': aforo['latitude'] or '',

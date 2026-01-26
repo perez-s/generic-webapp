@@ -111,11 +111,11 @@ def display_pending_requests_table(requests_data):
                 ),
                 "created_at": st.column_config.DateColumn(
                     "Fecha de creación",
-                    format="DD/MM/YY HH:mm"
+                    format="YYYY/MM/DD HH:mm"
                 ),
                 "updated_at": st.column_config.DateColumn(
                     "Última modificación",
-                    format="DD/MM/YY HH:mm"
+                    format="YYYY/MM/DD HH:mm"
                 )
             }
         )
@@ -167,11 +167,11 @@ def display_all_requests_table(requests_data):
                 ),
                 "created_at": st.column_config.DateColumn(
                     "Fecha de creación",
-                    format="DD/MM/YY HH:mm"
+                    format="YYYY/MM/DD HH:mm"
                 ),
                 "updated_at": st.column_config.DateColumn(
                     "Última modificación",
-                    format="DD/MM/YY HH:mm"
+                    format="YYYY/MM/DD HH:mm"
                 )
             }
         )
@@ -357,11 +357,11 @@ def display_schedule_pickup_table(pickup_data):
                 ),
                 "created_at": st.column_config.DateColumn(
                     "Fecha de creación",
-                    format="DD/MM/YY HH:mm"
+                    format="YYYY/MM/DD HH:mm"
                 ),
                 "updated_at": st.column_config.DateColumn(
                     "Última modificación",
-                    format="DD/MM/YY HH:mm"
+                    format="YYYY/MM/DD HH:mm"
                 )
             }
         )
@@ -434,11 +434,11 @@ def display_all_pickup_table(pickup_data):
                 ),
                 "created_at": st.column_config.DateColumn(
                     "Fecha de creación",
-                    format="DD/MM/YY HH:mm"
+                    format="YYYY/MM/DD HH:mm"
                 ),
                 "updated_at": st.column_config.DateColumn(
                     "Última modificación",
-                    format="DD/MM/YY HH:mm"
+                    format="YYYY/MM/DD HH:mm"
                 )
             }
         )

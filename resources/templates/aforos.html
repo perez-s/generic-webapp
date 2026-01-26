@@ -121,7 +121,9 @@
                 <th class="gi-title">Observaciones</th>
             </tr>
             <tr>
-                <td>{{ aforos[0].observaciones or '' }}</td>
+                {% if aforos[0].observaciones %}
+                    <td>{{ aforos[0].observaciones }}</td>
+                {% endif %}
             </tr>
         </table>
 
@@ -144,10 +146,20 @@
             </tr>
             <tr>
                 <th rowspan="2">Cliente</th>
-                <td>{{ aforos[0].nombre_firma }}</td>
-            </tr>
+                {% if aforos[0].nombre_firma %}
+                    <td>{{ aforos[0].nombre_firma }}</td>
+                {% else %}
+                    <td>
+                        N/A
+                    </td>
+                {% endif %}
+                </tr>
             <tr>
-                <td>{{ aforos[0].cedula_firma }}</td>
+                {% if aforos[0].cedula_firma %}
+                    <td>{{ aforos[0].cedula_firma }}</td>
+                {% else %}
+                    <td>N/A</td>
+                {% endif %} 
             </tr>
         </table>
 

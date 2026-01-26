@@ -204,8 +204,14 @@ def display_pending_requests_table(requests_data, userid):
                     options=get_enum_values("status_type"),
                     color=["blue", "green", "red"]
                 ),
-                "created_at": "Fecha de creación",
-                "updated_at": "Última modificación"
+                "created_at": st.column_config.DateTimeColumn(
+                    "Fecha de creación",
+                    format="YYYY/MM/DD HH:mm"
+                ),  
+                "updated_at": st.column_config.DateTimeColumn(
+                    "Última modificación",
+                    format="YYYY/MM/DD HH:mm"
+                )
             }
         )
         selected_count = displayed_table.Seleccionar.sum()

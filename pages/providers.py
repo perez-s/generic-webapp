@@ -662,11 +662,11 @@ def display_all_providers_table(providers_data):
                 ),
                 "created_at": st.column_config.DateColumn(
                     "Fecha de creación",
-                    format="DD/MM/YY HH:mm"
+                    format="YYYY/MM/DD HH:mm"
                 ),
                 "updated_at": st.column_config.DateColumn(
                     "Última modificación",
-                    format="DD/MM/YY HH:mm"
+                    format="YYYY/MM/DD HH:mm"
                 ),
                 "Estado": st.column_config.MultiselectColumn(
                     "Estado",

@@ -18,13 +18,27 @@ mc.protected_content()
 @st.dialog("Firma Aforo")
 def firma_dialog(
 
-    df: pd.DataFrame,
     vehiculo_placa: str,
     sucursal_id: int,
     evidencia_fachada: BytesIO,
-    evidencia_residuos: BytesIO,
-    observaciones: str
+    observaciones: str,
+    evidencia_residuos: BytesIO = None,
+    df: pd.DataFrame = None
 ):
+    
+    lat = None
+    lon = None
+    location = get_geolocation()
+
+    if location and 'error' in location:
+        if location['error']['code'] == 1:
+            st.error("Location permission denied")
+        else:
+            st.warning(f"Geolocation error: {location['error']['message']}")
+    elif location:
+        lat = location['coords']['latitude']
+        lon = location['coords']['longitude']
+
     nombre = st.text_input("Nombre completo")
     cedula = st.number_input("Cédula", min_value=0, step=1)
 
@@ -37,49 +51,67 @@ def firma_dialog(
         stroke_width=2
     )
 
+    guardar_aforo(
+        df = df,
+        vehiculo_placa = vehiculo_placa,
+        sucursal_id = sucursal_id,
+        evidencia_fachada = evidencia_fachada,
+        evidencia_residuos = evidencia_residuos,
+        observaciones = observaciones,
+        nombre = nombre,
+        cedula = cedula,
+        canvas_result = canvas_result,
+        lat = lat,
+        lon = lon,
+        location = location
+    )
+
+def guardar_aforo(
+        vehiculo_placa: str,
+        sucursal_id: int,
+        evidencia_fachada: BytesIO,
+        observaciones: str,
+        canvas_result,
+        lat: float,
+        lon: float,
+        location: dict,
+        df: pd.DataFrame = None,
+        nombre: str = None,
+        cedula: int = None,
+        evidencia_residuos: BytesIO = None
+):
+    
     if st.button("Confirmar Firma"):
-        if canvas_result.image_data is not None:
-            with st.spinner("Registrando aforo y enviando manifiesto de recolección..."):
-                st.toast("⏳ Registrando aforo...")
-                # Convert the image data to a PIL Image
-                firma = Image.fromarray(canvas_result.image_data.astype('uint8'), 'RGBA')
-                buffered = BytesIO()
-                firma.save(buffered, format="PNG")
+        with st.spinner("Registrando aforo y enviando manifiesto de recolección..."):
+            st.toast("⏳ Registrando aforo...")
+            # Convert the image data to a PIL Image
+            firma = Image.fromarray(canvas_result.image_data.astype('uint8'), 'RGBA') if canvas_result.image_data is not None else None
+            buffered = BytesIO()
+            firma.save(buffered, format="PNG")
 
-                firma_str = base64.b64encode(buffered.getvalue()).decode()
-                evidencia_fachada_str = mc.img_to_b64(evidencia_fachada)
-                evidencia_residuos_str = mc.img_to_b64(evidencia_residuos)
+            firma_str = base64.b64encode(buffered.getvalue()).decode() if buffered else None
+            evidencia_fachada_str = mc.img_to_b64(evidencia_fachada)
+            evidencia_residuos_str = mc.img_to_b64(evidencia_residuos) if evidencia_residuos else None
 
-                location = get_geolocation()
+            # Create aforo record
+            res = mq.create_aforo_record(
+                vehiculo_placa=vehiculo_placa,
+                operario_name=ss.get('username'),
+                sucursal_id=sucursal_id,
+                evidencia_fachada=evidencia_fachada_str,
+                evidencia_residuos=evidencia_residuos_str,
+                nombre_firma=nombre,
+                cedula_firma=cedula,
+                firma=firma_str,
+                observaciones=observaciones,
+                latitude=lat,
+                longitude=lon
+            )
 
-                if location and 'error' in location:
-                    if location['error']['code'] == 1:
-                        st.error("Location permission denied")
-                    else:
-                        st.warning(f"Geolocation error: {location['error']['message']}")
-                elif location:
-                    lat = location['coords']['latitude']
-                    lon = location['coords']['longitude']
+            aforo_id = res.data[0]['id']
 
-                # Create aforo record
-                res = mq.create_aforo_record(
-                    vehiculo_placa=vehiculo_placa,
-                    operario_name=ss.get('username'),
-                    sucursal_id=sucursal_id,
-                    evidencia_fachada=evidencia_fachada_str,
-                    evidencia_residuos=evidencia_residuos_str,
-                    nombre_firma=nombre,
-                    cedula_firma=cedula,
-                    firma=firma_str,
-                    observaciones=observaciones,
-                    latitude=lat,
-                    longitude=lon
-                )
-
-                aforo_id = res.data[0]['id']
-
+            if df is not None:
                 df['aforo_id'] = aforo_id
-                
                 df.rename(columns={"Item": "residuo"}, inplace=True)
                 if 'Peso (kg)' in df.columns:
                     df.rename(columns={"Peso (kg)": "weight"}, inplace=True)
@@ -91,48 +123,47 @@ def firma_dialog(
                 df = df.to_dict(orient='records')
                 mq.create_aforo_residuo_record(df)
 
-                st.toast("⏳ Generando manifiesto de recolección...")
+            st.toast("⏳ Generando manifiesto de recolección...")
 
-                fig = px.scatter_map(lat=[lat] if location and 'coords' in location else [],
-                                    lon=[lon] if location and 'coords' in location else [],
-                                    zoom=18, #wont work with values over 18
-                                    color_discrete_sequence=["red"],
-                                    map_style="open-street-map",
-                                    size=[18],
-                                    labels="Ubicación del operario",
-                                    height=800,
-                                    width=600)
-                fig.update_layout(
-                    margin={'t':0,'l':0,'b':0,'r':0}
-                )
+            fig = px.scatter_map(lat=[lat] if location and 'coords' in location else [],
+                                lon=[lon] if location and 'coords' in location else [],
+                                zoom=18, #wont work with values over 18
+                                color_discrete_sequence=["red"],
+                                map_style="open-street-map",
+                                size=[18],
+                                labels="Ubicación del operario",
+                                height=800,
+                                width=600)
+            fig.update_layout(
+                margin={'t':0,'l':0,'b':0,'r':0}
+            )
 
-                map_b64 = fig.to_image(format="png")
-                map_b64 = base64.b64encode(map_b64).decode('utf-8')
+            map_b64 = fig.to_image(format="png")
+            map_b64 = base64.b64encode(map_b64).decode('utf-8')
 
-                aforo = mq.get_aforo_by_id(res.data[0]['id'])
-                residues = mq.get_aforos_residues(aforo['id'])
+            aforo = mq.get_aforo_by_id(res.data[0]['id'])
+            residues = mq.get_aforos_residues(aforo['id'])
 
 
-                
-                pdf_bytes = mr.generate_aforos_pdf(
-                    aforo=aforo,
-                    residues=residues,
-                    fig_b64=map_b64
-                )
+            
+            pdf_bytes = mr.generate_aforos_pdf(
+                aforo=aforo,
+                residues=residues,
+                fig_b64=map_b64
+            )
 
-                mc.send_aforo_email(
-                    to_email=['perez14sebastian@gmail.com'],
-                    aforo_id=aforo['id'],
-                    pdf_bytes_io=BytesIO(pdf_bytes)
-                )
+            mc.send_aforo_email(
+                to_email=['perez14sebastian@gmail.com'],
+                aforo_id=aforo['id'],
+                pdf_bytes_io=BytesIO(pdf_bytes)
+            )
 
-                st.toast("✅ Manifiesto de recolección enviado por correo.")
-                st.rerun()                
+            st.toast("✅ Manifiesto de recolección enviado por correo.")
+            st.rerun()                
 
-                # Send confirmation email with PDF attached
-        else:
-            st.error("Por favor, proporciona una firma antes de confirmar.")
+            # Send confirmation email with PDF attached         
 
+    # Send confirmation email with PDF attached
 
 @st.dialog("Ruta del Día")
 def todays_route():
@@ -167,17 +198,6 @@ if ss["authentication_status"]:
     if st.button("Ruta del Día", type="primary"):
         todays_route()
     st.subheader("📥 Registro de Aforos")
-
-    location = get_geolocation()
-
-    if location and 'error' in location:
-        if location['error']['code'] == 1:
-            st.error("Location permission denied")
-        else:
-            st.warning(f"Geolocation error: {location['error']['message']}")
-    elif location:
-        lat = location['coords']['latitude']
-        lon = location['coords']['longitude']
 
     with st.container(border=True):
 
@@ -223,8 +243,18 @@ if ss["authentication_status"]:
         is_there_residues = st.radio("¿Hay residuos?", options=['Si', 'No'], index=0, horizontal=True)
         if is_there_residues == 'No':
             st.info("No hay residuos para registrar en este aforo.")
-            st.camera_input("Tomar evidencia fotográfica de la fachada")
-
+            evidencia_fachada = st.camera_input("Tomar evidencia fotográfica de la fachada")
+            firma = st.button("Firmar Aforo")
+            if firma:
+                if not sucursal_id:
+                    st.error("Selecciona primero la sucursal (Ciudad → Cliente → Sucursal)")
+                else:
+                    firma_dialog(
+                        vehiculo_placa=selected_plate,
+                        sucursal_id=sucursal_id,
+                        evidencia_fachada=evidencia_fachada,
+                        observaciones=""
+            )
         if is_there_residues == 'Si':
             weight_available = st.radio("¿Hay pesaje disponible?", options=['Si', 'No'], index=0, horizontal=True)
             if weight_available == 'Si':
