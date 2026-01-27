@@ -42,7 +42,7 @@ credentials:
     testing:
       email: testing@mywero.com.co
       failed_login_attempts: 0
-      logged_in: true
+      logged_in: false
       name: Testing
       password: $2b$12$KU6pRX3E0riGN/wecdJLkOzEALpgbAG4IhIIugpaXYUOTNMsHHGYW
       role: testing
@@ -56,7 +56,7 @@ credentials:
     wero-caracol:
       email: testing@mywero.com.co
       failed_login_attempts: 0
-      logged_in: false
+      logged_in: true
       name: Wero Caracol
       password: $2b$12$gW2LE7lQB1T1mnjWdkFhO.tHnlYZUzNfFKqv/wEk4sGtgG6.s3RDy
       role: wero

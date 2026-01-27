@@ -85,7 +85,7 @@ def display_pending_requests_table(requests_data):
             return
         rows["created_at"] = rows["created_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')
         rows["updated_at"] = rows["updated_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')
-        rows.set_index("id", inplace=True)
+        # rows.set_index("id", inplace=True)
         rows["Seleccionar"] = False
 
         displayed_table = st.data_editor(
@@ -127,7 +127,7 @@ def display_pending_requests_table(requests_data):
         if selected_count > 0:
             if st.button("🗓️ Agendar solicitud", width="stretch"):
                 schedule_request_form(
-                    ids=selected_rows.index.tolist(),
+                    ids=selected_rows["id"].tolist(),
                     all_requests=requests_data
                 )
     except Exception as e:
@@ -313,15 +313,15 @@ def display_schedule_pickup_table(pickup_data):
         rows = pd.DataFrame(pickup_data)
         rows = rows[["id","providers","pickup_status", "pickup_date", "created_at", "updated_at"]]
         rows["provider_name"] = rows["providers"].apply(lambda x: x["provider_name"] if isinstance(x, dict) else x)
-        rows = rows[["id", "created_at","provider_name","pickup_status", "pickup_date", "updated_at"]]
+        rows = rows[["id","pickup_date","created_at","updated_at","provider_name","pickup_status"]]
         rows["created_at"] = rows["created_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')
         rows["updated_at"] = rows["updated_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')
         rows = rows[rows["pickup_status"] == "Programada"]
-        rows.set_index("id", inplace=True)
+        # rows.set_index("id", inplace=True)
         rows["Seleccionar"] = False
 
         # Fetch all pickup requests for the displayed pickups in a single query
-        pickup_ids = rows.index.tolist()
+        pickup_ids = rows["id"].tolist()
         pickup_requests_by_pickup_id = {}
         if pickup_ids:
             response = supabase.table("pickup_requests").select("pickup_id, request_id").in_("pickup_id", pickup_ids).execute()
@@ -332,15 +332,64 @@ def display_schedule_pickup_table(pickup_data):
                 if pickup_id is not None and request_id is not None:
                     pickup_requests_by_pickup_id.setdefault(pickup_id, []).append(request_id)
 
-        rows["request_ids"] = rows.index.map(
+        rows["request_ids"] = rows["id"].map(
             lambda x: ", ".join(str(req_id) for req_id in pickup_requests_by_pickup_id.get(x, [])) or "N/A"
         )
         if rows.empty:
             st.info("📭 No hay recolecciones programadas aún. Programa una desde la pestaña de solicitudes pendientes.")
             return
 
-        displayed_table = st.data_editor(
-            rows,
+        top_menu_container = st.container()
+        pagination = st.container()
+
+        bottom_menu = st.columns((4, 1, 1))
+        with bottom_menu[2]:
+            batch_size = st.selectbox("Registros", options=[10, 25, 50, 100], key="pending_pickups_batch_size")
+        with bottom_menu[1]:
+            total_pages = (
+                int(len(rows) / batch_size) if int(len(rows) / batch_size) > 0 else 1
+            )
+            if ( batch_size * total_pages ) < len(rows):
+                total_pages += 1
+            page_numbers = list(range(1, total_pages + 1))
+            current_page = st.selectbox(
+                'Página', options=page_numbers, index=0, key="pending_pickups_page_selector"
+            )
+        with bottom_menu[0]:
+            st.markdown(f"Página **{current_page}** de **{total_pages}** ")
+        
+        top_menu = top_menu_container.columns(6)
+        with top_menu[5]:
+            label_map = {
+                "Seleccionar": "Seleccionar",
+                "provider_name": "Proveedor asignado",
+                "pickup_status": "Estado",
+                "pickup_date": "Fecha de recolección",
+                "created_at": "Fecha de creación",
+                "updated_at": "Última modificación",
+                "request_ids": "IDs de solicitudes asociadas"
+            }
+            available_cols = [k for k in label_map.keys() if k in rows.columns]
+            sort_field = st.selectbox(
+                "Ordenar por",
+                options=available_cols,
+                index=available_cols.index("created_at"),
+                format_func=lambda x: label_map.get(x, x),
+                key="pending_pickups_sort_field"
+            )
+        with top_menu[4]:
+            sort_direction = st.radio(
+                "Dirección", options=["⬆️", "⬇️"], horizontal=True, key="pending_pickups_sort_direction"
+            )
+        rows = rows.sort_values(
+            by=sort_field, ascending=sort_direction == "⬆️", ignore_index=True
+        )
+
+        rows = mc.split_frame(rows, batch_size)
+
+
+        displayed_table = pagination.data_editor(
+            data=rows[current_page - 1],
             width="stretch",
             disabled=["id","pickup_status", "pickup_date", "provider_name", "created_at", "updated_at", "request_ids"], 
             hide_index=True,
@@ -350,7 +399,10 @@ def display_schedule_pickup_table(pickup_data):
                     "Seleccionar",
                     pinned=True
                 ),
-                "pickup_date": "Fecha de recolección",
+                "pickup_date": st.column_config.DateColumn(
+                    "Fecha de recolección",
+                    format="YYYY/MM/DD"
+                    ),
                 "provider_name": "Proveedor asignado",
                 "request_ids": st.column_config.ListColumn(
                     "IDs de solicitudes asociadas"
@@ -376,16 +428,16 @@ def display_schedule_pickup_table(pickup_data):
         if selected_count > 0:
             if cols[2].button("❌ Cancelar", width="stretch"):
                 cancel_pickup_form(
-                    pickup_ids=displayed_table[displayed_table["Seleccionar"]].index.tolist()
+                    pickup_ids=displayed_table[displayed_table["Seleccionar"]]["id"].tolist()
                 )
         if selected_count > 0 and selected_count < 2:
             if cols[1].button("🔁 Editar", width="stretch"):
                 update_pickup_form(
-                    pickup_id=displayed_table[displayed_table["Seleccionar"]].index.tolist()[0]
+                    pickup_id=displayed_table[displayed_table["Seleccionar"]]["id"].tolist()[0]
                 )
             if cols[0].button("✅ Completar", width="stretch"):
                 complete_pickup_form(
-                    pickup_id=displayed_table[displayed_table["Seleccionar"]].index.tolist()[0]
+                    pickup_id=displayed_table[displayed_table["Seleccionar"]]["id"].tolist()[0]
                 )            
     except Exception as e:
             st.error("❌ Error al cargar las recolecciones programadas.")
@@ -393,14 +445,14 @@ def display_schedule_pickup_table(pickup_data):
 def display_all_pickup_table(pickup_data):
     try:   
         rows = pd.DataFrame(pickup_data)
-        rows = rows[["id", "providers", "pickup_status", "pickup_date", "created_at", "updated_at"]]
+        rows = rows[["providers", "pickup_status", "pickup_date", "created_at", "updated_at", "id"]]
         rows["provider_name"] = rows["providers"].apply(lambda x: x["provider_name"] if isinstance(x, dict) else x)
         rows = rows[["id", "created_at","provider_name","pickup_status", "pickup_date", "updated_at"]]
         rows["created_at"] = rows["created_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')
         rows["updated_at"] = rows["updated_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')
-        rows.set_index("id", inplace=True)
+        # rows.set_index("id", inplace=True)
         rows["Seleccionar"] = False
-        pickup_ids = rows.index.tolist()
+        pickup_ids = rows["id"].tolist()
         pickup_requests_by_pickup_id = {}
         if pickup_ids:
             response = supabase.table("pickup_requests").select("pickup_id, request_id").in_("pickup_id", pickup_ids).execute()
@@ -411,13 +463,62 @@ def display_all_pickup_table(pickup_data):
                 if pickup_id is not None and request_id is not None:
                     pickup_requests_by_pickup_id.setdefault(pickup_id, []).append(request_id)
 
-        rows["request_ids"] = rows.index.map(
+        rows["request_ids"] = rows["id"].map(
             lambda x: ", ".join(str(req_id) for req_id in pickup_requests_by_pickup_id.get(x, [])) or "N/A"
         )
 
+        top_menu_container = st.container()
+        pagination = st.container()
 
-        displayed_table = st.data_editor(
-            rows,
+        bottom_menu = st.columns((4, 1, 1))
+        with bottom_menu[2]:
+            batch_size = st.selectbox("Registros", options=[10, 25, 50, 100], key="all_pickups_batch_size")
+        with bottom_menu[1]:
+            total_pages = (
+                int(len(rows) / batch_size) if int(len(rows) / batch_size) > 0 else 1
+            )
+            if ( batch_size * total_pages ) < len(rows):
+                total_pages += 1
+            page_numbers = list(range(1, total_pages + 1))
+            current_page = st.selectbox(
+                'Página', options=page_numbers, index=0, key="all_pickups_page_selector"
+            )
+        with bottom_menu[0]:
+            st.markdown(f"Página **{current_page}** de **{total_pages}** ")
+        
+        top_menu = top_menu_container.columns(6)
+        with top_menu[5]:
+            label_map = {
+                "id": "ID",
+                "Seleccionar": "Seleccionar",
+                "provider_name": "Proveedor asignado",
+                "pickup_status": "Estado",
+                "pickup_date": "Fecha de recolección",
+                "created_at": "Fecha de creación",
+                "updated_at": "Última modificación",
+                "request_ids": "IDs de solicitudes asociadas"
+            }
+            available_cols = [k for k in label_map.keys() if k in rows.columns]
+            sort_field = st.selectbox(
+                "Ordenar por",
+                options=available_cols,
+                index=available_cols.index("created_at"),
+                format_func=lambda x: label_map.get(x, x),
+                key="all_pickups_sort_field"
+            )
+        with top_menu[4]:
+            sort_direction = st.radio(
+                "Dirección", options=["⬆️", "⬇️"], horizontal=True, key="all_pickups_sort_direction"
+            )
+        rows = rows.sort_values(
+            by=sort_field, ascending=sort_direction == "⬆️", ignore_index=True
+        )
+
+        rows = mc.split_frame(rows, batch_size)        
+
+
+        displayed_table = pagination.data_editor(
+            data=rows[current_page - 1],
             key="all_pickups_table",
             width="stretch",
             disabled=["id","pickup_status", "pickup_date", "provider_name", "created_at", "updated_at", "request_ids"],
@@ -454,7 +555,7 @@ def display_all_pickup_table(pickup_data):
         if selected_count > 0 and selected_count < 2:
             if cols[1].button("👁️ Consultar", width="stretch"):
                 pickup_detail_view(
-                    pickup_id=displayed_table[displayed_table["Seleccionar"]].index.tolist()[0]
+                    pickup_id=displayed_table[displayed_table["Seleccionar"]]["id"].tolist()[0]
                 )       
 
     except Exception as e:

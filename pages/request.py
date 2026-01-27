@@ -167,72 +167,125 @@ def create_request_form():
                 st.toast(f"❌ Error al crear la solicitud: {e}")
 
 def display_pending_requests_table(requests_data, userid):
-    try:   
-        rows = pd.DataFrame(requests_data)
-        rows = rows[["id","users","current_status","request_category","measure_type","estimated_amount","created_at","updated_at"]]
-        rows["userid"] = rows["users"].apply(lambda x: x["id"] if isinstance(x, dict) else x)
-        rows["username"] = rows["users"].apply(lambda x: x["username"] if isinstance(x, dict) else x)
-        rows = rows[(rows["current_status"] == "Pendiente") & (rows["userid"] == userid)]
-        rows = rows[["id","username","created_at","current_status","request_category","measure_type","estimated_amount","updated_at"]]
-        if rows.empty:
-            st.info(f"📭 No hay solicitudes pendientes disponibles")
-            return
-        rows["created_at"] = rows["created_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')
-        rows["updated_at"] = rows["updated_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')   
-        rows.set_index("id", inplace=True)
-        rows["Seleccionar"] = False
-        displayed_table = st.data_editor(
-            rows,
-            width="stretch",
-            disabled=["id", "username","current_status", "request_category", "measure_type", "estimated_amount", "created_at", "updated_at"], 
-            hide_index=True,
-            column_config={
-                "id": "ID",
-                "Seleccionar": st.column_config.CheckboxColumn(
-                    "Seleccionar",
-                    pinned=True
-                ),
-                "username": "Usuario",
-                "current_status": "Estado",
-                "request_category": st.column_config.MultiselectColumn(
-                    "Categorías de residuos",
-                    options=get_enum_values("residue_category"),
-                    color=mc.elevencolors
-                ),
-                "measure_type": "Tipo de unidad",
-                "estimated_amount": "Cantidad estimada",
-                "current_status": st.column_config.MultiselectColumn(
-                    "Estado",
-                    options=get_enum_values("status_type"),
-                    color=["blue", "green", "red"]
-                ),
-                "created_at": st.column_config.DatetimeColumn(
-                    "Fecha de creación",
-                    format="YYYY/MM/DD HH:mm"
-                ),  
-                "updated_at": st.column_config.DatetimeColumn(
-                    "Última modificación",
-                    format="YYYY/MM/DD HH:mm"
+    try:
+        with st.container(border=True, width="stretch"):
+            rows = pd.DataFrame(requests_data)
+            rows = rows[["id","users","current_status","request_category","measure_type","estimated_amount","created_at","updated_at"]]
+            rows["userid"] = rows["users"].apply(lambda x: x["id"] if isinstance(x, dict) else x)
+            rows["username"] = rows["users"].apply(lambda x: x["username"] if isinstance(x, dict) else x)
+            rows = rows[(rows["current_status"] == "Pendiente") & (rows["userid"] == userid)]
+            rows = rows[["id","created_at","updated_at","username","current_status","request_category","measure_type","estimated_amount"]]
+            if rows.empty:
+                st.info(f"📭 No hay solicitudes pendientes disponibles")
+                return
+            rows["created_at"] = rows["created_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')
+            rows["updated_at"] = rows["updated_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')   
+            # rows.set_index("id", inplace=True)
+    
+            rows["Seleccionar"] = False
+
+            top_menu_container = st.container()
+            pagination = st.container()
+
+            bottom_menu = st.columns((4, 1, 1))
+            with bottom_menu[2]:
+                batch_size = st.selectbox("Registros", options=[10, 25, 50, 100])
+            with bottom_menu[1]:
+                total_pages = (
+                    int(len(rows) / batch_size) if int(len(rows) / batch_size) > 0 else 1
                 )
-            }
-        )
-        selected_count = displayed_table.Seleccionar.sum()
-        col1, col2 = st.columns(2)
-        if selected_count > 0 and selected_count < 2:
-            with col1:    
-                if st.button("🔁 Editar solicitud", width="stretch"):
-                    default_options = select_request(displayed_table[displayed_table["Seleccionar"]].index.tolist()[0])
-                    update_request_form(
-                        id=displayed_table[displayed_table["Seleccionar"]].index.tolist()[0],
-                        request_category_default=default_options["request_category"],
-                        measure_type_default=default_options["measure_type"],
-                        estimated_amount_default=default_options["estimated_amount"],
-                        details_default=default_options["details"]
+                if ( batch_size * total_pages ) < len(rows):
+                    total_pages += 1
+                page_numbers = list(range(1, total_pages + 1))
+                current_page = st.selectbox(
+                    'Página', options=page_numbers, index=0, key="page_selector"
+                )
+            with bottom_menu[0]:
+                st.markdown(f"Página **{current_page}** de **{total_pages}** ")
+            
+            top_menu = top_menu_container.columns(6)
+            with top_menu[5]:
+                label_map = {
+                    "id": "ID",
+                    "username": "Usuario",
+                    "current_status": "Estado",
+                    "request_category": "Categorías de residuos",
+                    "measure_type": "Tipo de unidad",
+                    "estimated_amount": "Cantidad estimada",
+                    "created_at": "Fecha de creación",
+                    "updated_at": "Última modificación",
+                }
+                available_cols = [k for k in label_map.keys() if k in rows.columns]
+                sort_field = st.selectbox(
+                    "Ordenar por",
+                    options=available_cols,
+                    index=available_cols.index("created_at"),
+                    format_func=lambda x: label_map.get(x, x)
+                )
+            with top_menu[4]:
+                sort_direction = st.radio(
+                    "Dirección", options=["⬆️", "⬇️"], horizontal=True
+                )
+            rows = rows.sort_values(
+                by=sort_field, ascending=sort_direction == "⬆️", ignore_index=True
+            )
+
+            rows = mc.split_frame(rows, batch_size)
+            
+            displayed_table = pagination.data_editor(
+                data=rows[current_page - 1],
+                width="stretch",
+                disabled=["id", "username","current_status", "request_category", "measure_type", "estimated_amount", "created_at", "updated_at"], 
+                hide_index=True,
+                column_config={
+                    "id": "ID",
+                    "Seleccionar": st.column_config.CheckboxColumn(
+                        "Seleccionar",
+                        pinned=True
+                    ),
+                    "username": "Usuario",
+                    "current_status": "Estado",
+                    "request_category": st.column_config.MultiselectColumn(
+                        "Categorías de residuos",
+                        options=get_enum_values("residue_category"),
+                        color=mc.elevencolors
+                    ),
+                    "measure_type": "Tipo de unidad",
+                    "estimated_amount": "Cantidad estimada",
+                    "current_status": st.column_config.MultiselectColumn(
+                        "Estado",
+                        options=get_enum_values("status_type"),
+                        color=["blue", "green", "red"]
+                    ),
+                    "created_at": st.column_config.DatetimeColumn(
+                        "Fecha de creación",
+                        format="YYYY/MM/DD HH:mm"
+                    ),  
+                    "updated_at": st.column_config.DatetimeColumn(
+                        "Última modificación",
+                        format="YYYY/MM/DD HH:mm"
                     )
-        if selected_count > 0 or selected_count >= 2:
-            with col2:
-                if st.button("❌ Cancelar solicitudes", width="stretch"):
-                    confirm_delete_dialog(displayed_table[displayed_table["Seleccionar"]].index.tolist())
+                }
+            )
+            
+            selected_count = displayed_table.Seleccionar.sum()
+
+            col1, col2 = st.columns(2)
+            if selected_count > 0 and selected_count < 2:
+                with col1:    
+                    if st.button("🔁 Editar solicitud", width="stretch"):
+                        default_options = select_request(displayed_table[displayed_table["Seleccionar"]]["id"].tolist()[0])
+                        update_request_form(
+                            id=displayed_table[displayed_table["Seleccionar"]]["id"],
+                            request_category_default=default_options["request_category"],
+                            measure_type_default=default_options["measure_type"],
+                            estimated_amount_default=default_options["estimated_amount"],
+                            details_default=default_options["details"]
+                        )
+            if selected_count > 0 or selected_count >= 2:
+                with col2:
+                    if st.button("❌ Cancelar solicitudes", width="stretch"):
+                        confirm_delete_dialog(displayed_table[displayed_table["Seleccionar"]]["id"].tolist())
            
     except Exception as e:
         st.info(f"Error al mostrar las solicitudes {e}")
@@ -244,7 +297,7 @@ def display_all_requests_table(requests_data, userid):
         rows["userid"] = rows["users"].apply(lambda x: x["id"] if isinstance(x, dict) else x)
         rows["username"] = rows["users"].apply(lambda x: x["username"] if isinstance(x, dict) else x)
         rows = rows[(rows["userid"] == userid)]
-        rows = rows[["id","username","created_at","current_status","request_category","measure_type","estimated_amount","updated_at", "admin_note"]]
+        rows = rows[["id","username","created_at","updated_at","current_status","request_category","measure_type","estimated_amount", "admin_note"]]
         rows["created_at"] = rows["created_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')
         rows["updated_at"] = rows["updated_at"].apply(lambda x: parser.parse(x)).dt.tz_convert('America/Bogota')
         if rows.empty:
@@ -252,8 +305,58 @@ def display_all_requests_table(requests_data, userid):
             return
         rows.set_index("id", inplace=True)
 
-        st.dataframe(
-            rows,
+        top_menu_container = st.container()
+        pagination = st.container()
+
+        bottom_menu = st.columns((4, 1, 1))
+        with bottom_menu[2]:
+            batch_size = st.selectbox("Registros", options=[10, 25, 50, 100], key="all_requests_batch_size")
+        with bottom_menu[1]:
+            total_pages = (
+                int(len(rows) / batch_size) if int(len(rows) / batch_size) > 0 else 1
+            )
+            if ( batch_size * total_pages ) < len(rows):
+                total_pages += 1
+            page_numbers = list(range(1, total_pages + 1))
+            current_page = st.selectbox(
+                'Página', options=page_numbers, index=0, key="all_requests_page_selector"
+            )
+        with bottom_menu[0]:
+            st.markdown(f"Página **{current_page}** de **{total_pages}** ")
+        
+        top_menu = top_menu_container.columns(6)
+        with top_menu[5]:
+            label_map = {
+                "id": "ID",
+                "Seleccionar": "Seleccionar",
+                "username": "Usuario",
+                "current_status": "Estado",
+                "request_category": "Categorías de residuos",
+                "measure_type": "Tipo de unidad",
+                "estimated_amount": "Cantidad estimada",
+                "created_at": "Fecha de creación",
+                "updated_at": "Última modificación",
+            }
+            available_cols = [k for k in label_map.keys() if k in rows.columns]
+            sort_field = st.selectbox(
+                "Ordenar por",
+                options=available_cols,
+                index=available_cols.index("created_at"),
+                format_func=lambda x: label_map.get(x, x),
+                key="all_requests_sort_field"
+            )
+        with top_menu[4]:
+            sort_direction = st.radio(
+                "Dirección", options=["⬆️", "⬇️"], horizontal=True, key="all_requests_sort_direction"
+            )
+        rows = rows.sort_values(
+            by=sort_field, ascending=sort_direction == "⬆️", ignore_index=True
+        )
+
+        rows = mc.split_frame(rows, batch_size)
+
+        pagination.dataframe(
+            rows[current_page - 1],
             width="stretch",
             hide_index=True,
             column_config={
@@ -318,7 +421,7 @@ if ss["authentication_status"]:
     ### Formulario de solicitud de servicio ###
     mc.logout_and_home('./pages/residuos_peligrosos.py')
 
-    st.subheader("📋 Solicitud de servicio")
+    st.markdown("### 📋 Solicitud de servicio")
 
     create_request_button()
 

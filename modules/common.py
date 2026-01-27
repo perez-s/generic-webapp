@@ -24,6 +24,11 @@ elevencolors = ["blue", "green", "orange", "red", "purple", "brown", "gray", "pi
 #         encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
 #     return encoded_string
 
+# @st.cache_data(show_spinner=False)
+def split_frame(input_df, rows):
+    df = [input_df.loc[i : i + rows - 1, :] for i in range(0, len(input_df), rows)]
+    return df
+
 def img_to_b64(img):
     try:
         if img is None:

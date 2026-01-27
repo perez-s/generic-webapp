@@ -640,10 +640,61 @@ def display_all_providers_table(providers_data):
         # Add status column based on current year vs updated_at year
         current_year = pd.Timestamp.now().year
         rows["Estado"] = rows["updated_at"].dt.year.apply(lambda y: "Actualizado" if y == current_year else "Vencido")
-        rows.set_index("id", inplace=True)
+        # rows.set_index("id", inplace=True)
         rows["Seleccionar"] = False
-        displayed_table = st.data_editor(
-            rows,
+
+        top_menu_container = st.container()
+        pagination = st.container()
+
+        bottom_menu = st.columns((4, 1, 1))
+        with bottom_menu[2]:
+            batch_size = st.selectbox("Registros", options=[10, 25, 50, 100], key="all_requests_batch_size")
+        with bottom_menu[1]:
+            total_pages = (
+                int(len(rows) / batch_size) if int(len(rows) / batch_size) > 0 else 1
+            )
+            if ( batch_size * total_pages ) < len(rows):
+                total_pages += 1
+            page_numbers = list(range(1, total_pages + 1))
+            current_page = st.selectbox(
+                'Página', options=page_numbers, index=0, key="all_requests_page_selector"
+            )
+        with bottom_menu[0]:
+            st.markdown(f"Página **{current_page}** de **{total_pages}** ")
+        
+        top_menu = top_menu_container.columns(6)
+        with top_menu[5]:
+            label_map = {
+                "id": "ID",
+                "Seleccionar": "Seleccionar",
+                "provider_name": "Nombre del proveedor",
+                "provider_nit": "NIT del proveedor",
+                "provider_category": "Categorías de residuos",
+                "created_at": "Fecha de creación",
+                "updated_at": "Última modificación",
+                "Estado": "Estado"
+            }
+            available_cols = [k for k in label_map.keys() if k in rows.columns]
+            sort_field = st.selectbox(
+                "Ordenar por",
+                options=available_cols,
+                index=available_cols.index("provider_name"),
+                format_func=lambda x: label_map.get(x, x),
+                key="all_requests_sort_field"
+            )
+        with top_menu[4]:
+            sort_direction = st.radio(
+                "Dirección", options=["⬆️", "⬇️"], horizontal=True, key="all_requests_sort_direction"
+            )
+        rows = rows.sort_values(
+            by=sort_field, ascending=sort_direction == "⬆️", ignore_index=True
+        )
+
+        rows = mc.split_frame(rows, batch_size)
+
+
+        displayed_table = pagination.data_editor(
+            data=rows[current_page - 1],
             width="stretch",
             disabled=["id","provider_name", "provider_nit", "provider_category", "created_at", "updated_at", "Estado"],
             hide_index=True,
@@ -679,7 +730,7 @@ def display_all_providers_table(providers_data):
         selected_count = displayed_table.Seleccionar.sum()
         col1, col2, col3, col4 = st.columns(4)
         if selected_count > 0 and selected_count < 2:
-            selected_id = displayed_table[displayed_table["Seleccionar"]].index.tolist()[0]
+            selected_id = displayed_table[displayed_table["Seleccionar"]]["id"].tolist()[0]
             
             with col1:
                 if st.button("👁️ Consultar", width="stretch"):
@@ -709,7 +760,7 @@ def display_all_providers_table(providers_data):
         if selected_count > 0 or selected_count >= 2:
             with col3:
                 if st.button("🗑️ Eliminar proveedor/es", width="stretch"):
-                    confirm_delete_dialog(displayed_table[displayed_table["Seleccionar"]].index.tolist())   
+                    confirm_delete_dialog(displayed_table[displayed_table["Seleccionar"]]["id"].tolist())   
     except Exception as e:
         st.write(f"No hay proveedores disponibles aun")
 
