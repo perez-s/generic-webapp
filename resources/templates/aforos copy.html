@@ -176,6 +176,21 @@
                         <div class="bottomleft">
                             <p>{{ aforos[0].fecha }}</p>
                             <p>{{ aforos[0].hora }}</p>
+                            {% comment %} {% set lat = aforos[0].latitud %}
+                            {% set lat_dir = 'N' if lat >= 0 else 'S' %}
+                            {% set lat_abs = lat|abs %}
+                            {% set lat_deg = lat_abs|int %}
+                            {% set lat_min_f = (lat_abs - lat_deg) * 60 %}
+                            {% set lat_min = lat_min_f|int %}
+                            {% set lat_sec = (lat_min_f - lat_min) * 60 %}
+                            {% set lon = aforos[0].longitud %}
+                            {% set lon_dir = 'E' if lon >= 0 else 'W' %}
+                            {% set lon_abs = lon|abs %}
+                            {% set lon_deg = lon_abs|int %}
+                            {% set lon_min_f = (lon_abs - lon_deg) * 60 %}
+                            {% set lon_min = lon_min_f|int %}
+                            {% set lat_sec = (lat_min_f - lat_min) * 60 %}                                    
+                            <p>{{ lat_deg }}° {{ lat_min }}' {{  '%.3f' % lat_sec }}'' {{ lat_dir }}, {{ lon_deg }}° {{ lon_min }}' {{  '%.3f' % lat_sec }}'' {{ lon_dir }}</p> {% endcomment %}
                         </div>
                         {% else %}
                             <p>No hay evidencia fotográfica de la fachada.</p>
@@ -184,12 +199,28 @@
                 </td>
                 <td>
                     <div class="container">
+                        {% comment %} <p class="bold-this">Foto residuos:</p> {% endcomment %}
                         <p class="bold-this">Foto residuos 1:</p>
                         {% if aforos[0].evidencia_residuos %}
                         <img class="ev-residuos" src="data:image/png;base64,{{ aforos[0].evidencia_residuos|safe }}" alt="">
                         <div class="bottomleft">
                             <p>{{ aforos[0].fecha }}</p>
                             <p>{{ aforos[0].hora }}</p>
+                            {% comment %} {% set lat = aforos[0].latitud %}
+                            {% set lat_dir = 'N' if lat >= 0 else 'S' %}
+                            {% set lat_abs = lat|abs %}
+                            {% set lat_deg = lat_abs|int %}
+                            {% set lat_min_f = (lat_abs - lat_deg) * 60 %}
+                            {% set lat_min = lat_min_f|int %}
+                            {% set lat_sec = (lat_min_f - lat_min) * 60 %}
+                            {% set lon = aforos[0].longitud %}
+                            {% set lon_dir = 'E' if lon >= 0 else 'W' %}
+                            {% set lon_abs = lon|abs %}
+                            {% set lon_deg = lon_abs|int %}
+                            {% set lon_min_f = (lon_abs - lon_deg) * 60 %}
+                            {% set lon_min = lon_min_f|int %}
+                            {% set lat_sec = (lat_min_f - lat_min) * 60 %}                                    
+                            <p>{{ lat_deg }}° {{ lat_min }}' {{  '%.3f' % lat_sec }}'' {{ lat_dir }}, {{ lon_deg }}° {{ lon_min }}' {{  '%.3f' % lat_sec }}'' {{ lon_dir }}</p> {% endcomment %}
                         {% else %}
                             <p>No hay evidencia fotográfica de los residuos.</p>
                         {% endif %}
