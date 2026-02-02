@@ -23,21 +23,23 @@ def firma_dialog(
     evidencia_fachada: BytesIO,
     observaciones: str,
     evidencia_residuos: BytesIO = None,
+    optional_photo: BytesIO = None,
     df: pd.DataFrame = None
+    
 ):
     
     lat = None
     lon = None
-    location = get_geolocation()
+    # location = get_geolocation()
 
-    if location and 'error' in location:
-        if location['error']['code'] == 1:
-            st.error("Location permission denied")
-        else:
-            st.warning(f"Geolocation error: {location['error']['message']}")
-    elif location:
-        lat = location['coords']['latitude']
-        lon = location['coords']['longitude']
+    # if location and 'error' in location:
+    #     if location['error']['code'] == 1:
+    #         st.error("Location permission denied")
+    #     else:
+    #         st.warning(f"Geolocation error: {location['error']['message']}")
+    # elif location:
+    #     lat = location['coords']['latitude']
+    #     lon = location['coords']['longitude']
 
     nombre = st.text_input("Nombre completo")
     cedula = st.number_input("Cédula", min_value=0, step=1)
@@ -63,7 +65,8 @@ def firma_dialog(
         canvas_result = canvas_result,
         lat = lat,
         lon = lon,
-        location = location
+        optional_photo=optional_photo
+        # location = location
     )
 
 def guardar_aforo(
@@ -74,11 +77,12 @@ def guardar_aforo(
         canvas_result,
         lat: float,
         lon: float,
-        location: dict,
         df: pd.DataFrame = None,
         nombre: str = None,
         cedula: int = None,
-        evidencia_residuos: BytesIO = None
+        location: dict = None,
+        evidencia_residuos: BytesIO = None,
+        optional_photo: BytesIO = None
 ):
     
     if st.button("Confirmar Firma"):
@@ -92,6 +96,7 @@ def guardar_aforo(
             firma_str = base64.b64encode(buffered.getvalue()).decode() if buffered else None
             evidencia_fachada_str = mc.img_to_b64(evidencia_fachada)
             evidencia_residuos_str = mc.img_to_b64(evidencia_residuos) if evidencia_residuos else None
+            optional_photo_str = mc.img_to_b64(optional_photo) if optional_photo else None
 
             # Create aforo record
             res = mq.create_aforo_record(
@@ -125,21 +130,21 @@ def guardar_aforo(
 
             st.toast("⏳ Generando manifiesto de recolección...")
 
-            fig = px.scatter_map(lat=[lat] if location and 'coords' in location else [],
-                                lon=[lon] if location and 'coords' in location else [],
-                                zoom=18, #wont work with values over 18
-                                color_discrete_sequence=["red"],
-                                map_style="open-street-map",
-                                size=[18],
-                                labels="Ubicación del operario",
-                                height=800,
-                                width=600)
-            fig.update_layout(
-                margin={'t':0,'l':0,'b':0,'r':0}
-            )
+            # fig = px.scatter_map(lat=[lat] if location and 'coords' in location else [],
+            #                     lon=[lon] if location and 'coords' in location else [],
+            #                     zoom=18, #wont work with values over 18
+            #                     color_discrete_sequence=["red"],
+            #                     map_style="open-street-map",
+            #                     size=[18],
+            #                     labels="Ubicación del operario",
+            #                     height=800,
+            #                     width=600)
+            # fig.update_layout(
+            #     margin={'t':0,'l':0,'b':0,'r':0}
+            # )
 
-            map_b64 = fig.to_image(format="png")
-            map_b64 = base64.b64encode(map_b64).decode('utf-8')
+            # map_b64 = fig.to_image(format="png")
+            # map_b64 = base64.b64encode(map_b64).decode('utf-8')
 
             aforo = mq.get_aforo_by_id(res.data[0]['id'])
             residues = mq.get_aforos_residues(aforo['id'])
@@ -149,7 +154,8 @@ def guardar_aforo(
             pdf_bytes = mr.generate_aforos_pdf(
                 aforo=aforo,
                 residues=residues,
-                fig_b64=map_b64
+                fig_b64=optional_photo_str
+                # fig_b64=map_b64
             )
 
             mc.send_aforo_email(
@@ -305,9 +311,10 @@ if ss["authentication_status"]:
             with columns[0]:
                 evidencia_fachada = st.camera_input("Tomar evidencia fotográfica de la fachada")
             with columns[1]:
-                evidencia_residuos = st.camera_input("Tomar evidencia fotográfica de los residuos")
+                evidencia_residuos = st.camera_input("Tomar evidencia fotográfica de los residuos 1")
             observaciones = st.text_area("Observaciones")
-            # derive placa_id from session selected plate
+            with columns[0]:
+                optional_photo = st.camera_input("Tomar evidencia fotográfica de los residuos 2")
 
             firma = st.button("Firmar Aforo")
 
@@ -321,7 +328,8 @@ if ss["authentication_status"]:
                         sucursal_id=sucursal_id,
                         evidencia_fachada=evidencia_fachada,
                         evidencia_residuos=evidencia_residuos,
-                        observaciones=observaciones
+                        observaciones=observaciones,
+                        optional_photo=optional_photo
                     )
 
 else:
